@@ -1,5 +1,4 @@
-package io.github.zakki0925224
-
+import core._
 import chisel3._
 import chiseltest._
 import org.scalatest.flatspec.AnyFlatSpec

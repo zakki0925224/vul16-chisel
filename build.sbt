@@ -1,5 +1,5 @@
 scalaVersion := "2.13.15"
-name         := "scala-chisel-test"
+name         := "vul16-chisel"
 organization := "io.github.zakki0925224"
 version      := "1.0"
 

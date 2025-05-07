@@ -1,4 +1,4 @@
-package io.github.zakki0925224
+package core
 
 import chisel3._
 import chisel3.util.Counter
