@@ -10,14 +10,14 @@ class ImemPort extends Bundle {
     val inst = Output(UInt(WORD_LEN.W))
 }
 
-class Memory extends Module {
+class Memory(memInit: Seq[Int]) extends Module {
     val io = IO(new Bundle {
         val imem = new ImemPort()
     })
 
     val mem = Mem(MEM_SIZE, UInt(8.W))
-    for ((value, index) <- MEM_INIT.zipWithIndex) {
-        mem(index) := value.U(8.W)
+    for ((v, i) <- memInit.zipWithIndex) {
+        mem(i) := v.U(8.W)
     }
 
     io.imem.inst := Cat(
