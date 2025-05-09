@@ -10,5 +10,5 @@ object Opcode extends ChiselEnum {
     val Sub     = Value
     val Subi    = Value
     val Exit    = Value
-    val Unknown = Value
+    val Invalid = Value
 }
