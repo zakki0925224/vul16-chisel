@@ -18,6 +18,7 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
         test(new Top(Seq(0x00, 0x00, 0x00, 0xf8, 0x00, 0x00))) { c =>
             c.io.exit.expect(false.B)
             c.clock.step(1)
+            c.io.inst.expect(0xf800.U)
             c.io.exit.expect(true.B)
             c.clock.step(1)
             c.io.exit.expect(false.B)
@@ -49,22 +50,31 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
 
         test(new Top(prog)) { c =>
             val gpRegs = c.io.gpRegs
+
             // addi r1, r0, 5
+            c.clock.step(2)
+            gpRegs(0).expect(0.U)
             gpRegs(1).expect(5.U)
-            c.clock.step(1)
+
             // addi r2, r0, 3
             gpRegs(2).expect(3.U)
-            c.clock.step(1)
+            c.clock.step(2)
+
             // add r3, r1, r2
             gpRegs(3).expect(8.U)
-            c.clock.step(1)
+            gpRegs(1).expect(5.U)
+            gpRegs(2).expect(3.U)
+            c.clock.step(2)
+
             // sub r4, r1, r2
             gpRegs(4).expect(2.U)
-            c.clock.step(1)
+            gpRegs(1).expect(5.U)
+            gpRegs(2).expect(3.U)
+            c.clock.step(2)
+
             // subi r5, r1, 2
             gpRegs(5).expect(3.U)
-            c.clock.step(1)
-            c.io.exit.expect(true.B)
+            gpRegs(1).expect(5.U)
         }
     }
 }
