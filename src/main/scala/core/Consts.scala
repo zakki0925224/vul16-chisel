@@ -10,9 +10,7 @@ object Consts {
     val START_ADDR  = 0x0000
 
     val MEM_INIT: Seq[Int] = Seq(
-        0x00,
-        0x00,
-        0x00,
+        0x00, 0x00, 0x00, 0xf8, 0x00, // exit
         0x00
     )
 

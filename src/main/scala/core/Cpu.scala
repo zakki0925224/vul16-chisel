@@ -6,7 +6,7 @@ import core.Consts._
 
 class Cpu extends Module {
     // (op, rd, rs1, rs2, imm)
-    def decode(inst: UInt): (Opcode.Type, UInt, UInt, UInt, SInt) = {
+    def decode(inst: UInt): (Opcode.Type, UInt, UInt, UInt, UInt) = {
         val op = inst(15, 11)
 
         // type R
@@ -15,7 +15,7 @@ class Cpu extends Module {
         val rs2 = inst(4, 2)
 
         // type I
-        val imm = inst(4, 0).asSInt
+        val imm = inst(4, 0)
 
         val decoded = WireDefault(Opcode.Invalid)
         switch(op) {
@@ -35,9 +35,10 @@ class Cpu extends Module {
         val memDataOut  = Input(UInt(BYTE_LEN.W))
         val memDataLoad = Output(Bool())
 
-        val inst = Input(UInt(WORD_LEN.W))
-        val pc   = Output(UInt(WORD_LEN.W))
-        val exit = Output(Bool())
+        val inst   = Input(UInt(WORD_LEN.W))
+        val pc     = Output(UInt(WORD_LEN.W))
+        val gpRegs = Output(Vec(NUM_GP_REGS, UInt(WORD_LEN.W)))
+        val exit   = Output(Bool())
     })
 
     // TODO
@@ -48,9 +49,9 @@ class Cpu extends Module {
     // general purpose registers
     val gpRegs = VecInit(Seq.fill(NUM_GP_REGS)(Module(new Register()).io))
     for (i <- 0 until NUM_GP_REGS) {
-        gpRegs(i).in   := 0.U(WORD_LEN.W)
+        gpRegs(i).in   := gpRegs(i).out
         gpRegs(i).load := false.B
-        gpRegs(i).out  := 0.U(WORD_LEN.W)
+        io.gpRegs(i)   := gpRegs(i).out
     }
 
     // control status register
@@ -73,10 +74,11 @@ class Cpu extends Module {
 
     // execute
     val alu = Module(new Alu())
-    alu.io.a      := gpRegs(rs1).out
-    alu.io.b      := gpRegs(rs2).out
-    alu.io.op     := AluOpcode.Add
-    gpRegs(rd).in := alu.io.out
+    alu.io.a        := gpRegs(rs1).out
+    alu.io.b        := gpRegs(rs2).out
+    alu.io.op       := AluOpcode.Add
+    gpRegs(rd).in   := alu.io.out
+    gpRegs(rd).load := true.B
 
     switch(op) {
         is(Opcode.Add) {
@@ -85,8 +87,8 @@ class Cpu extends Module {
             alu.io.op := AluOpcode.Add
         }
         is(Opcode.Addi) {
-            alu.io.a := gpRegs(rs1).out
-            // alu.io.b := imm.asUInt // TODO
+            alu.io.a  := gpRegs(rs1).out
+            alu.io.b  := imm
             alu.io.op := AluOpcode.Add
         }
         is(Opcode.Sub) {
@@ -95,8 +97,8 @@ class Cpu extends Module {
             alu.io.op := AluOpcode.Sub
         }
         is(Opcode.Subi) {
-            alu.io.a := gpRegs(rs1).out
-            // alu.io.b := imm.asUInt // TODO
+            alu.io.a  := gpRegs(rs1).out
+            alu.io.b  := imm
             alu.io.op := AluOpcode.Sub
         }
     }

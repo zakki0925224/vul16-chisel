@@ -5,8 +5,9 @@ import core.Consts._
 
 class Top(memInit: Seq[Int] = MEM_INIT) extends Module {
     val io = IO(new Bundle {
-        val exit = Output(Bool())
-        val pc   = Output(UInt(WORD_LEN.W))
+        val exit   = Output(Bool())
+        val pc     = Output(UInt(WORD_LEN.W))
+        val gpRegs = Output(Vec(NUM_GP_REGS, UInt(WORD_LEN.W)))
     })
 
     val cpu = Module(new Cpu())
@@ -19,5 +20,6 @@ class Top(memInit: Seq[Int] = MEM_INIT) extends Module {
     mem.io.instAddr   := cpu.io.pc
     cpu.io.inst       := mem.io.instOut
     io.pc             := cpu.io.pc
+    io.gpRegs         := cpu.io.gpRegs
     io.exit           := cpu.io.exit
 }

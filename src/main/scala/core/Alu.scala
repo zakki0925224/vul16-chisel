@@ -23,8 +23,8 @@ class Alu extends Module {
     io.out := 0.U(WORD_LEN.W)
 
     switch(io.op) {
-        is(AluOpcode.Add) { io.out := io.a + io.b }
-        is(AluOpcode.Sub) { io.out := io.a - io.b }
+        is(AluOpcode.Add) { io.out := (io.a.asSInt + io.b.asSInt).asUInt }
+        is(AluOpcode.Sub) { io.out := (io.a.asSInt - io.b.asSInt).asUInt }
         is(AluOpcode.And) { io.out := io.a & io.b }
         is(AluOpcode.Or) { io.out := io.a | io.b }
         is(AluOpcode.Xor) { io.out := io.a ^ io.b }
