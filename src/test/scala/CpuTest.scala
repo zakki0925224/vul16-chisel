@@ -8,9 +8,9 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
     it should "increment pc" in {
         test(new Cpu) { c =>
             c.clock.step(1)
-            c.io.imem.addr.expect(2.U)
+            c.io.pc.expect(2.U)
             c.clock.step(1)
-            c.io.imem.addr.expect(4.U)
+            c.io.pc.expect(4.U)
         }
     }
 

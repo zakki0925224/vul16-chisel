@@ -12,7 +12,12 @@ class Top(memInit: Seq[Int] = MEM_INIT) extends Module {
     val cpu = Module(new Cpu())
     val mem = Module(new Memory(memInit))
 
-    cpu.io.imem <> mem.io.imem
-    io.pc   := cpu.io.imem.addr
-    io.exit := cpu.io.exit
+    mem.io.dataAddr   := cpu.io.memDataAddr
+    mem.io.dataIn     := cpu.io.memDataIn
+    cpu.io.memDataOut := mem.io.dataOut
+    mem.io.dataLoad   := cpu.io.memDataLoad
+    mem.io.instAddr   := cpu.io.pc
+    cpu.io.inst       := mem.io.instOut
+    io.pc             := cpu.io.pc
+    io.exit           := cpu.io.exit
 }

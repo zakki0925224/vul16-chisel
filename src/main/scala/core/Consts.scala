@@ -4,6 +4,7 @@ import chisel3._
 
 object Consts {
     val WORD_LEN    = 16
+    val BYTE_LEN    = 8
     val NUM_GP_REGS = 8
     val MEM_SIZE    = 16384
     val START_ADDR  = 0x0000

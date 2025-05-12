@@ -3,7 +3,6 @@ package core
 import chisel3._
 import chisel3.util._
 import core.Consts._
-import upickle.default
 
 class Cpu extends Module {
     // (op, rd, rs1, rs2, imm)
@@ -31,9 +30,20 @@ class Cpu extends Module {
     }
 
     val io = IO(new Bundle {
-        val imem = Flipped(new ImemPort())
+        val memDataAddr = Output(UInt(WORD_LEN.W))
+        val memDataIn   = Output(UInt(BYTE_LEN.W))
+        val memDataOut  = Input(UInt(BYTE_LEN.W))
+        val memDataLoad = Output(Bool())
+
+        val inst = Input(UInt(WORD_LEN.W))
+        val pc   = Output(UInt(WORD_LEN.W))
         val exit = Output(Bool())
     })
+
+    // TODO
+    io.memDataAddr := 0.U(WORD_LEN.W)
+    io.memDataIn   := 0.U(BYTE_LEN.W)
+    io.memDataLoad := false.B
 
     // general purpose registers
     val gpRegs = VecInit(Seq.fill(NUM_GP_REGS)(Module(new Register()).io))
@@ -49,13 +59,13 @@ class Cpu extends Module {
     // program counter
     // fetch
     val pc = Module(new Register(START_ADDR.U(WORD_LEN.W)))
-    pc.io.in     := pc.io.out + 2.U(WORD_LEN.W)
-    io.imem.addr := pc.io.out
-    pc.io.load   := true.B
+    pc.io.in   := pc.io.out + 2.U(WORD_LEN.W)
+    io.pc      := pc.io.out
+    pc.io.load := true.B
     printf(cf"fetch: pc: 0x${pc.io.out}%x, ")
 
     // decode
-    val inst = io.imem.inst
+    val inst = io.inst
 
     val (op, rd, rs1, rs2, imm) = decode(inst)
     io.exit := op === Opcode.Exit

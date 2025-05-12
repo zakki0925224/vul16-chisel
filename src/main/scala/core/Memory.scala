@@ -5,14 +5,15 @@ import chisel3.util._
 import chisel3.util.experimental.loadMemoryFromFile
 import core.Consts._
 
-class ImemPort extends Bundle {
-    val addr = Input(UInt(WORD_LEN.W))
-    val inst = Output(UInt(WORD_LEN.W))
-}
-
 class Memory(memInit: Seq[Int]) extends Module {
     val io = IO(new Bundle {
-        val imem = new ImemPort()
+        val dataAddr = Input(UInt(WORD_LEN.W))
+        val dataIn   = Input(UInt(BYTE_LEN.W))
+        val dataOut  = Output(UInt(BYTE_LEN.W))
+        val dataLoad = Input(Bool())
+
+        val instAddr = Input(UInt(WORD_LEN.W))
+        val instOut  = Output(UInt(WORD_LEN.W))
     })
 
     val mem = Mem(MEM_SIZE, UInt(8.W))
@@ -20,8 +21,13 @@ class Memory(memInit: Seq[Int]) extends Module {
         mem(i) := v.U(8.W)
     }
 
-    io.imem.inst := Cat(
-        mem(io.imem.addr + 1.U(WORD_LEN.W)),
-        mem(io.imem.addr)
+    io.instOut := Cat(
+        mem(io.instAddr + 1.U(WORD_LEN.W)),
+        mem(io.instAddr)
     )
+
+    io.dataOut := mem(io.dataAddr)
+    when(io.dataLoad) {
+        mem(io.dataAddr) := io.dataIn
+    }
 }
