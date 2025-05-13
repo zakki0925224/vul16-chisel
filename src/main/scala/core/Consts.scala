@@ -19,5 +19,11 @@ object Consts {
     val OP_ADDI = 0x01
     val OP_SUB  = 0x02
     val OP_SUBI = 0x03
+    val OP_AND  = 0x04
+    val OP_ANDI = 0x05
+    val OP_OR   = 0x06
+    val OP_ORI  = 0x07
+    val OP_XOR  = 0x08
+    val OP_XORI = 0x09
     val OP_EXIT = 0x1f // temporary
 }

@@ -9,6 +9,12 @@ object Opcode extends ChiselEnum {
     val Addi    = Value
     val Sub     = Value
     val Subi    = Value
+    val And     = Value
+    val Andi    = Value
+    val Or      = Value
+    val Ori     = Value
+    val Xor     = Value
+    val Xori    = Value
     val Exit    = Value
     val Invalid = Value
 }
