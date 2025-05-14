@@ -15,6 +15,12 @@ object Opcode extends ChiselEnum {
     val Ori     = Value
     val Xor     = Value
     val Xori    = Value
+    val Sll     = Value
+    val Slli    = Value
+    val Srl     = Value
+    val Srli    = Value
+    val Sra     = Value
+    val Srai    = Value
     val Exit    = Value
     val Invalid = Value
 }

@@ -26,15 +26,21 @@ Vulcan-16 - 16bit CPU
 
 ### List
 
-| Instruction | Type | Opcode | Format           | Implementation           |
-| ----------- | ---- | ------ | ---------------- | ------------------------ |
-| ADD         | R    | 0x00   | add rd, rs1, rs2 | r[rd] = r[rs1] + r[rs2]  |
-| ADDI        | I    | 0x01   | addi rd, rs, imm | r[rd] = r[rs] + imm      |
-| SUB         | R    | 0x02   | sub rd, rs1, rs2 | r[rd] = r[rs1] - r[rs2]  |
-| SUBI        | I    | 0x03   | subi rd, rs, imm | r[rd] = r[rs] - imm      |
-| AND         | R    | 0x04   | and rd, rs1, rs2 | r[rd] = r[rs1] & r[rs2]  |
-| ANDI        | I    | 0x05   | andi rd, rs, imm | r[rd] = r[rs] & imm      |
-| OR          | R    | 0x06   | or rd, rs1, rs2  | r[rd] = r[rs1] \| r[rs2] |
-| ORI         | I    | 0x07   | ori rd, rs, imm  | r[rd] = r[rs] \| imm     |
-| XOR         | R    | 0x08   | xor rd, rs1, rs2 | r[rd] = r[rs1] ^ r[rs2]  |
-| XORI        | I    | 0x09   | xori rd, rs, imm | r[rd] = r[rs] ^ imm      |
+| Instruction | Type | Opcode | Format           | Implementation                  |
+| ----------- | ---- | ------ | ---------------- | ------------------------------- |
+| ADD         | R    | 0x00   | add rd, rs1, rs2 | r[rd] = r[rs1].i + r[rs2].i     |
+| ADDI        | I    | 0x01   | addi rd, rs, imm | r[rd] = r[rs].i + imm.i         |
+| SUB         | R    | 0x02   | sub rd, rs1, rs2 | r[rd] = r[rs1].i - r[rs2].i     |
+| SUBI        | I    | 0x03   | subi rd, rs, imm | r[rd] = r[rs].i - imm.i         |
+| AND         | R    | 0x04   | and rd, rs1, rs2 | r[rd] = r[rs1] & r[rs2]         |
+| ANDI        | I    | 0x05   | andi rd, rs, imm | r[rd] = r[rs] & imm             |
+| OR          | R    | 0x06   | or rd, rs1, rs2  | r[rd] = r[rs1] \| r[rs2]        |
+| ORI         | I    | 0x07   | ori rd, rs, imm  | r[rd] = r[rs] \| imm            |
+| XOR         | R    | 0x08   | xor rd, rs1, rs2 | r[rd] = r[rs1] ^ r[rs2]         |
+| XORI        | I    | 0x09   | xori rd, rs, imm | r[rd] = r[rs] ^ imm             |
+| SLL         | R    | 0x0a   | sll rd, rs1, rs2 | r[rd] = r[rs1] << r[rs2][3:0]   |
+| SLLI        | I    | 0x0b   | slli rd, rs, imm | r[rd] = r[rs] << imm[3:0]       |
+| SRL         | R    | 0x0c   | srl rd, rs1, rs2 | r[rd] = r[rs1] >> r[rs2][3:0]   |
+| SRLI        | I    | 0x0d   | srli rd, rs, imm | r[rd] = r[rs] >> imm[3:0]       |
+| SRA         | R    | 0x0e   | sra rd, rs1, rs2 | r[rd] = r[rs1].i >> r[rs2][3:0] |
+| SRAI        | I    | 0x0f   | srai rd, rs, imm | r[rd] = r[rs].i >> imm[3:0]     |

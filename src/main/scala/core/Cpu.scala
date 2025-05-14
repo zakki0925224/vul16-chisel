@@ -29,6 +29,12 @@ class Cpu extends Module {
             is(OP_ORI.U(5.W)) { decoded := Opcode.Ori }
             is(OP_XOR.U(5.W)) { decoded := Opcode.Xor }
             is(OP_XORI.U(5.W)) { decoded := Opcode.Xori }
+            is(OP_SLL.U(5.W)) { decoded := Opcode.Sll }
+            is(OP_SLLI.U(5.W)) { decoded := Opcode.Slli }
+            is(OP_SRL.U(5.W)) { decoded := Opcode.Srl }
+            is(OP_SRLI.U(5.W)) { decoded := Opcode.Srli }
+            is(OP_SRA.U(5.W)) { decoded := Opcode.Sra }
+            is(OP_SRAI.U(5.W)) { decoded := Opcode.Srai }
             is(OP_EXIT.U(5.W)) { decoded := Opcode.Exit }
         }
 
@@ -167,6 +173,54 @@ class Cpu extends Module {
             gpRegs(rd).in   := alu.io.out
             gpRegs(rd).load := true.B
             printf(cf"execute: xori: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+        }
+        is(Opcode.Sll) {
+            alu.io.a        := gpRegs(rs1).out
+            alu.io.b        := gpRegs(rs2).out
+            alu.io.op       := AluOpcode.Sll
+            gpRegs(rd).in   := alu.io.out
+            gpRegs(rd).load := true.B
+            printf(cf"execute: sll: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+        }
+        is(Opcode.Slli) {
+            alu.io.a        := gpRegs(rs1).out
+            alu.io.b        := imm
+            alu.io.op       := AluOpcode.Sll
+            gpRegs(rd).in   := alu.io.out
+            gpRegs(rd).load := true.B
+            printf(cf"execute: slli: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+        }
+        is(Opcode.Srl) {
+            alu.io.a        := gpRegs(rs1).out
+            alu.io.b        := gpRegs(rs2).out
+            alu.io.op       := AluOpcode.Srl
+            gpRegs(rd).in   := alu.io.out
+            gpRegs(rd).load := true.B
+            printf(cf"execute: srl: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+        }
+        is(Opcode.Srli) {
+            alu.io.a        := gpRegs(rs1).out
+            alu.io.b        := imm
+            alu.io.op       := AluOpcode.Srl
+            gpRegs(rd).in   := alu.io.out
+            gpRegs(rd).load := true.B
+            printf(cf"execute: srli: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+        }
+        is(Opcode.Sra) {
+            alu.io.a        := gpRegs(rs1).out
+            alu.io.b        := gpRegs(rs2).out
+            alu.io.op       := AluOpcode.Sra
+            gpRegs(rd).in   := alu.io.out
+            gpRegs(rd).load := true.B
+            printf(cf"execute: sra: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+        }
+        is(Opcode.Srai) {
+            alu.io.a        := gpRegs(rs1).out
+            alu.io.b        := imm
+            alu.io.op       := AluOpcode.Sra
+            gpRegs(rd).in   := alu.io.out
+            gpRegs(rd).load := true.B
+            printf(cf"execute: srai: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
         }
     }
 }

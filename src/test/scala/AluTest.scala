@@ -31,4 +31,26 @@ class AluTest extends AnyFlatSpec with ChiselScalatestTester {
             c.io.out.expect("b1110".U)
         }
     }
+
+    it should "perform shift operations" in {
+        test(new Alu) { c =>
+            c.io.a.poke(10.U)
+            c.io.b.poke(2.U)
+            c.io.op.poke(AluOpcode.Sll)
+            c.clock.step()
+            c.io.out.expect(40.U)
+
+            c.io.a.poke(10.U)
+            c.io.b.poke(2.U)
+            c.io.op.poke(AluOpcode.Srl)
+            c.clock.step()
+            c.io.out.expect(2.U)
+
+            c.io.a.poke(10.U)
+            c.io.b.poke(2.U)
+            c.io.op.poke(AluOpcode.Sra)
+            c.clock.step()
+            c.io.out.expect(2.U)
+        }
+    }
 }

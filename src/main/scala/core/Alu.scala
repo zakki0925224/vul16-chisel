@@ -10,6 +10,9 @@ object AluOpcode extends ChiselEnum {
     val And = Value
     val Or  = Value
     val Xor = Value
+    val Sll = Value
+    val Srl = Value
+    val Sra = Value
 }
 
 class Alu extends Module {
@@ -28,5 +31,8 @@ class Alu extends Module {
         is(AluOpcode.And) { io.out := io.a & io.b }
         is(AluOpcode.Or) { io.out := io.a | io.b }
         is(AluOpcode.Xor) { io.out := io.a ^ io.b }
+        is(AluOpcode.Sll) { io.out := io.a << io.b(3, 0) }
+        is(AluOpcode.Srl) { io.out := io.a >> io.b(3, 0) }
+        is(AluOpcode.Sra) { io.out := (io.a.asSInt >> io.b(3, 0)).asUInt }
     }
 }
