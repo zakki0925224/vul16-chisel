@@ -39,6 +39,12 @@ class Cpu extends Module {
             is(OP_SLTI.U(5.W)) { decoded := Opcode.Slti }
             is(OP_SLTU.U(5.W)) { decoded := Opcode.Sltu }
             is(OP_SLTIU.U(5.W)) { decoded := Opcode.Sltiu }
+            is(OP_LB.U(5.W)) { decoded := Opcode.Lb }
+            is(OP_LBU.U(5.W)) { decoded := Opcode.Lbu }
+            is(OP_LH.U(5.W)) { decoded := Opcode.Lh }
+            is(OP_LHU.U(5.W)) { decoded := Opcode.Lhu }
+            is(OP_SB.U(5.W)) { decoded := Opcode.Sb }
+            is(OP_SH.U(5.W)) { decoded := Opcode.Sh }
             is(OP_EXIT.U(5.W)) { decoded := Opcode.Exit }
         }
 
@@ -57,7 +63,6 @@ class Cpu extends Module {
         val exit   = Output(Bool())
     })
 
-    // TODO
     io.memDataAddr := 0.U(WORD_LEN.W)
     io.memDataIn   := 0.U(BYTE_LEN.W)
     io.memDataLoad := false.B
@@ -85,10 +90,14 @@ class Cpu extends Module {
     val inst = io.inst
 
     val (op, rd, rs1, rs2, imm) = decode(inst)
-    io.exit := op === Opcode.Exit
     printf(cf"decode: inst: 0x$inst%x => op: $op\n")
 
+    io.exit := false.B
+
     // execute
+    val cycles  = RegInit(0.U(WORD_LEN.W))
+    val lhValue = RegInit(0.U(WORD_LEN.W))
+
     val alu = Module(new Alu())
     alu.io.a  := 0.U
     alu.io.b  := 0.U
@@ -98,6 +107,7 @@ class Cpu extends Module {
     gpRegs(rd).load := false.B
 
     switch(op) {
+        // calculate instructions
         is(Opcode.Add) {
             alu.io.a        := gpRegs(rs1).out
             alu.io.b        := gpRegs(rs2).out
@@ -257,6 +267,92 @@ class Cpu extends Module {
             gpRegs(rd).in   := alu.io.out
             gpRegs(rd).load := true.B
             printf(cf"execute: sltiu: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+        }
+        // load/store instructions
+        is(Opcode.Lb) {
+            io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+            io.memDataLoad  := false.B
+            gpRegs(rd).in   := io.memDataOut
+            gpRegs(rd).load := true.B
+            printf(cf"execute: lb: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n")
+        }
+        is(Opcode.Lbu) {
+            io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+            io.memDataLoad  := false.B
+            gpRegs(rd).in   := io.memDataOut
+            gpRegs(rd).load := true.B
+            printf(cf"execute: lbu: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n")
+        }
+        is(Opcode.Lh) {
+            switch(cycles) {
+                is(0.U) {
+                    io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    io.memDataLoad := false.B
+                    lhValue        := io.memDataOut
+                    cycles         := 1.U
+                }
+                is(1.U) {
+                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
+                    io.memDataLoad  := false.B
+                    gpRegs(rd).in   := Cat(io.memDataOut, lhValue).asSInt.asUInt
+                    gpRegs(rd).load := true.B
+                    cycles          := 0.U
+                    printf(
+                        cf"execute: lh: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    )
+                }
+            }
+        }
+        is(Opcode.Lhu) {
+            switch(cycles) {
+                is(0.U) {
+                    io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    io.memDataLoad := false.B
+                    lhValue        := io.memDataOut
+                    cycles         := 1.U
+                }
+                is(1.U) {
+                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
+                    io.memDataLoad  := false.B
+                    gpRegs(rd).in   := Cat(io.memDataOut, lhValue).asUInt
+                    gpRegs(rd).load := true.B
+                    cycles          := 0.U
+                    printf(
+                        cf"execute: lhu: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    )
+                }
+            }
+        }
+        is(Opcode.Sb) {
+            io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+            io.memDataLoad := true.B
+            io.memDataIn   := gpRegs(rd).out(7, 0)
+
+            printf(cf"execute: sb: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n")
+        }
+        is(Opcode.Sh) {
+            switch(cycles) {
+                is(0.U) {
+                    io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    io.memDataLoad := true.B
+                    io.memDataIn   := gpRegs(rd).out(7, 0)
+                    cycles         := 1.U
+                }
+                is(1.U) {
+                    io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
+                    io.memDataLoad := true.B
+                    io.memDataIn   := gpRegs(rd).out(15, 8)
+                    cycles         := 0.U
+                    printf(
+                        cf"execute: sh: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    )
+                }
+            }
+        }
+
+        is(Opcode.Exit) {
+            io.exit := true.B
+            printf(cf"execute: exit\n")
         }
     }
 }

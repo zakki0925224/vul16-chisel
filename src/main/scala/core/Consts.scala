@@ -35,5 +35,11 @@ object Consts {
     val OP_SLTI  = 0x11
     val OP_SLTU  = 0x12
     val OP_SLTIU = 0x13
+    val OP_LB    = 0x14
+    val OP_LBU   = 0x15
+    val OP_LH    = 0x16
+    val OP_LHU   = 0x17
+    val OP_SB    = 0x18
+    val OP_SH    = 0x19
     val OP_EXIT  = 0x1f // temporary
 }

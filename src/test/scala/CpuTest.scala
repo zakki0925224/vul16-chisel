@@ -133,4 +133,60 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             gpRegs(0).expect(5.U)
         }
     }
+
+    it should "load store instructions" in {
+        // addi r1, r0, 0x34
+        val addi_r1_r0_0x34 = (0x1 << 11) | (1 << 8) | (0 << 5) | (0x34 & 0x1f)
+        // addi r1, r1, 0x10 (合計0x34になるように2回加算)
+        val addi_r1_r1_0x10 = (0x1 << 11) | (1 << 8) | (1 << 5) | (0x10 & 0x1f)
+        // addi r2, r0, 0x12
+        val addi_r2_r0_0x12 = (0x1 << 11) | (2 << 8) | (0 << 5) | (0x12 & 0x1f)
+        // sb r1, r2, 0 (m[r[2]+0] = r[1])
+        val sb_r1_r2_0 = (0x18 << 11) | (1 << 8) | (2 << 5) | (0 & 0x1f)
+        // lb r3, r2, 0 (r[3] = m[r[2]+0])
+        val lb_r3_r2_0 = (0x14 << 11) | (3 << 8) | (2 << 5) | (0 & 0x1f)
+
+        // addi r4, r0, 0x78
+        val addi_r4_r0_0x18 = (0x1 << 11) | (4 << 8)
+
+        val exit = 0xf800
+
+        val prog = Seq(
+            addi_r1_r0_0x34,
+            addi_r1_r1_0x10,
+            addi_r2_r0_0x12,
+            sb_r1_r2_0,
+            lb_r3_r2_0,
+            addi_r4_r0_0x18,
+            exit
+        ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
+
+        test(new Top(prog)) { c =>
+            val gpRegs = c.io.gpRegs
+
+            // addi r1, r0, 0x34
+            c.clock.step(1)
+            gpRegs(1).expect((0x14).U) // 0x34 & 0x1f = 0x14
+
+            // addi r1, r1, 0x10
+            c.clock.step(1)
+            gpRegs(1).expect((0x14 + 0x10).U) // 0x24
+
+            // addi r2, r0, 0x12
+            c.clock.step(1)
+            gpRegs(2).expect(0x12.U)
+
+            // sb r1, r2, 0
+            c.clock.step(1)
+            // メモリ書き込みなのでレジスタ変化なし
+
+            // lb r3, r2, 0
+            c.clock.step(3)
+            gpRegs(3).expect(0x24.U)
+
+            // addi r4, r0, 0x18
+            c.clock.step(3)
+            gpRegs(4).expect(0x18.U)
+        }
+    }
 }
