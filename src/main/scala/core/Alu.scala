@@ -31,8 +31,8 @@ class Alu extends Module {
         is(AluOpcode.And) { io.out := io.a & io.b }
         is(AluOpcode.Or) { io.out := io.a | io.b }
         is(AluOpcode.Xor) { io.out := io.a ^ io.b }
-        is(AluOpcode.Sll) { io.out := io.a << io.b(3, 0) }
-        is(AluOpcode.Srl) { io.out := io.a >> io.b(3, 0) }
-        is(AluOpcode.Sra) { io.out := (io.a.asSInt >> io.b(3, 0)).asUInt }
+        is(AluOpcode.Sll) { io.out := io.a << io.b(4, 0) }
+        is(AluOpcode.Srl) { io.out := io.a >> io.b(4, 0) }
+        is(AluOpcode.Sra) { io.out := (io.a.asSInt >> io.b(4, 0)).asUInt }
     }
 }
