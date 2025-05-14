@@ -5,14 +5,16 @@ import chisel3.util._
 import core.Consts._
 
 object AluOpcode extends ChiselEnum {
-    val Add = Value
-    val Sub = Value
-    val And = Value
-    val Or  = Value
-    val Xor = Value
-    val Sll = Value
-    val Srl = Value
-    val Sra = Value
+    val Add  = Value
+    val Sub  = Value
+    val And  = Value
+    val Or   = Value
+    val Xor  = Value
+    val Sll  = Value
+    val Srl  = Value
+    val Sra  = Value
+    val Slt  = Value
+    val Sltu = Value
 }
 
 class Alu extends Module {
@@ -34,5 +36,7 @@ class Alu extends Module {
         is(AluOpcode.Sll) { io.out := io.a << io.b(4, 0) }
         is(AluOpcode.Srl) { io.out := io.a >> io.b(4, 0) }
         is(AluOpcode.Sra) { io.out := (io.a.asSInt >> io.b(4, 0)).asUInt }
+        is(AluOpcode.Slt) { io.out := (io.a.asSInt < io.b.asSInt).asUInt }
+        is(AluOpcode.Sltu) { io.out := (io.a < io.b).asUInt }
     }
 }

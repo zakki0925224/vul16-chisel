@@ -53,4 +53,32 @@ class AluTest extends AnyFlatSpec with ChiselScalatestTester {
             c.io.out.expect(2.U)
         }
     }
+
+    it should "perform compare operations" in {
+        test(new Alu) { c =>
+            c.io.a.poke(10.U)
+            c.io.b.poke(3.U)
+            c.io.op.poke(AluOpcode.Slt)
+            c.clock.step()
+            c.io.out.expect(0.U)
+
+            c.io.a.poke(3.U)
+            c.io.b.poke(10.U)
+            c.io.op.poke(AluOpcode.Slt)
+            c.clock.step()
+            c.io.out.expect(1.U)
+
+            c.io.a.poke(10.U)
+            c.io.b.poke(3.U)
+            c.io.op.poke(AluOpcode.Sltu)
+            c.clock.step()
+            c.io.out.expect(0.U)
+
+            c.io.a.poke(3.U)
+            c.io.b.poke(10.U)
+            c.io.op.poke(AluOpcode.Sltu)
+            c.clock.step()
+            c.io.out.expect(1.U)
+        }
+    }
 }
