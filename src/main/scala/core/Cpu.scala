@@ -67,6 +67,8 @@ class Cpu extends Module {
     io.memDataIn   := 0.U(BYTE_LEN.W)
     io.memDataLoad := false.B
 
+    io.exit := false.B
+
     // general purpose registers
     val gpRegs = VecInit(Seq.fill(NUM_GP_REGS)(Module(new Register()).io))
     for (i <- 0 until NUM_GP_REGS) {
@@ -89,14 +91,12 @@ class Cpu extends Module {
     // decode
     val inst = io.inst
 
-    val (op, rd, rs1, rs2, imm) = decode(inst)
+    val (op, rd, rs1, rs2, imm) = decode(inst) // TODO: opcode updated in 2nd cycle
     printf(cf"decode: inst: 0x$inst%x => op: $op\n")
-
-    io.exit := false.B
 
     // execute
     val cycles  = RegInit(0.U(WORD_LEN.W))
-    val lhValue = RegInit(0.U(WORD_LEN.W))
+    val lhValue = RegInit(0.U(BYTE_LEN.W))
 
     val alu = Module(new Alu())
     alu.io.a  := 0.U
@@ -106,253 +106,252 @@ class Cpu extends Module {
     gpRegs(rd).in   := 0.U
     gpRegs(rd).load := false.B
 
-    switch(op) {
-        // calculate instructions
-        is(Opcode.Add) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := gpRegs(rs2).out
-            alu.io.op       := AluOpcode.Add
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: add: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Addi) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := imm
-            alu.io.op       := AluOpcode.Add
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: addi: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Sub) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := gpRegs(rs2).out
-            alu.io.op       := AluOpcode.Sub
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: sub: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Subi) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := imm
-            alu.io.op       := AluOpcode.Sub
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: subi: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.And) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := gpRegs(rs2).out
-            alu.io.op       := AluOpcode.And
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: and: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Andi) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := imm
-            alu.io.op       := AluOpcode.And
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: andi: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Or) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := gpRegs(rs2).out
-            alu.io.op       := AluOpcode.Or
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: or: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Ori) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := imm
-            alu.io.op       := AluOpcode.Or
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: ori: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Xor) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := gpRegs(rs2).out
-            alu.io.op       := AluOpcode.Xor
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: xor: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Xori) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := imm
-            alu.io.op       := AluOpcode.Xor
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: xori: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Sll) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := gpRegs(rs2).out
-            alu.io.op       := AluOpcode.Sll
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: sll: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Slli) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := imm
-            alu.io.op       := AluOpcode.Sll
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: slli: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Srl) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := gpRegs(rs2).out
-            alu.io.op       := AluOpcode.Srl
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: srl: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Srli) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := imm
-            alu.io.op       := AluOpcode.Srl
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: srli: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Sra) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := gpRegs(rs2).out
-            alu.io.op       := AluOpcode.Sra
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: sra: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Srai) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := imm
-            alu.io.op       := AluOpcode.Sra
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: srai: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Slt) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := gpRegs(rs2).out
-            alu.io.op       := AluOpcode.Slt
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: slt: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Slti) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := imm
-            alu.io.op       := AluOpcode.Slt
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: slti: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Sltu) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := gpRegs(rs2).out
-            alu.io.op       := AluOpcode.Sltu
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: sltu: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Sltiu) {
-            alu.io.a        := gpRegs(rs1).out
-            alu.io.b        := imm
-            alu.io.op       := AluOpcode.Sltu
-            gpRegs(rd).in   := alu.io.out
-            gpRegs(rd).load := true.B
-            printf(cf"execute: sltiu: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        // load/store instructions
-        is(Opcode.Lb) {
-            io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-            io.memDataLoad  := false.B
-            gpRegs(rd).in   := io.memDataOut
-            gpRegs(rd).load := true.B
-            printf(cf"execute: lb: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Lbu) {
-            io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-            io.memDataLoad  := false.B
-            gpRegs(rd).in   := io.memDataOut
-            gpRegs(rd).load := true.B
-            printf(cf"execute: lbu: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Lh) {
-            switch(cycles) {
-                is(0.U) {
-                    io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-                    io.memDataLoad := false.B
-                    lhValue        := io.memDataOut
-                    cycles         := 1.U
-                }
-                is(1.U) {
-                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
-                    io.memDataLoad  := false.B
-                    gpRegs(rd).in   := Cat(io.memDataOut, lhValue).asSInt.asUInt
-                    gpRegs(rd).load := true.B
-                    cycles          := 0.U
-                    printf(
-                        cf"execute: lh: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
-                    )
-                }
-            }
-        }
-        is(Opcode.Lhu) {
-            switch(cycles) {
-                is(0.U) {
-                    io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-                    io.memDataLoad := false.B
-                    lhValue        := io.memDataOut
-                    cycles         := 1.U
-                }
-                is(1.U) {
-                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
-                    io.memDataLoad  := false.B
-                    gpRegs(rd).in   := Cat(io.memDataOut, lhValue).asUInt
-                    gpRegs(rd).load := true.B
-                    cycles          := 0.U
-                    printf(
-                        cf"execute: lhu: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
-                    )
-                }
-            }
-        }
-        is(Opcode.Sb) {
-            io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-            io.memDataLoad := true.B
-            io.memDataIn   := gpRegs(rd).out(7, 0)
+    switch(cycles) {
+        is(0.U) {
+            printf("1st cycle:\n");
 
-            printf(cf"execute: sb: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n")
-        }
-        is(Opcode.Sh) {
-            switch(cycles) {
-                is(0.U) {
+            switch(op) {
+                is(Opcode.Add) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := gpRegs(rs2).out
+                    alu.io.op       := AluOpcode.Add
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: add: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Addi) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := imm
+                    alu.io.op       := AluOpcode.Add
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: addi: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Sub) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := gpRegs(rs2).out
+                    alu.io.op       := AluOpcode.Sub
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+
+                    printf(cf"execute: sub: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Subi) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := imm
+                    alu.io.op       := AluOpcode.Sub
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: subi: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.And) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := gpRegs(rs2).out
+                    alu.io.op       := AluOpcode.And
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: and: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Andi) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := imm
+                    alu.io.op       := AluOpcode.And
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: andi: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Or) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := gpRegs(rs2).out
+                    alu.io.op       := AluOpcode.Or
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: or: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Ori) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := imm
+                    alu.io.op       := AluOpcode.Or
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: ori: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Xor) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := gpRegs(rs2).out
+                    alu.io.op       := AluOpcode.Xor
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: xor: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Xori) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := imm
+                    alu.io.op       := AluOpcode.Xor
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: xori: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Sll) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := gpRegs(rs2).out
+                    alu.io.op       := AluOpcode.Sll
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: sll: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Slli) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := imm
+                    alu.io.op       := AluOpcode.Sll
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: slli: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Srl) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := gpRegs(rs2).out
+                    alu.io.op       := AluOpcode.Srl
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: srl: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Srli) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := imm
+                    alu.io.op       := AluOpcode.Srl
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: srli: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Sra) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := gpRegs(rs2).out
+                    alu.io.op       := AluOpcode.Sra
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: sra: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Srai) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := imm
+                    alu.io.op       := AluOpcode.Sra
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: srai: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Slt) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := gpRegs(rs2).out
+                    alu.io.op       := AluOpcode.Slt
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: slt: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Slti) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := imm
+                    alu.io.op       := AluOpcode.Slt
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: slti: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Sltu) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := gpRegs(rs2).out
+                    alu.io.op       := AluOpcode.Sltu
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: sltu: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Sltiu) {
+                    alu.io.a        := gpRegs(rs1).out
+                    alu.io.b        := imm
+                    alu.io.op       := AluOpcode.Sltu
+                    gpRegs(rd).in   := alu.io.out
+                    gpRegs(rd).load := true.B
+                    printf(cf"execute: sltiu: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Lb) {
+                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    io.memDataLoad  := false.B
+                    gpRegs(rd).in   := io.memDataOut.asSInt.asUInt
+                    gpRegs(rd).load := true.B
+                    printf(
+                        cf"execute: lb: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    )
+                }
+                is(Opcode.Lbu) {
+                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    io.memDataLoad  := false.B
+                    gpRegs(rd).in   := io.memDataOut
+                    gpRegs(rd).load := true.B
+                    printf(
+                        cf"execute: lbu: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    )
+                }
+                is(Opcode.Lh, Opcode.Lhu) {
+                    io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    io.memDataLoad := false.B
+                    lhValue        := io.memDataOut
+                    cycles         := 1.U
+                }
+                is(Opcode.Sb) {
+                    io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    io.memDataLoad := true.B
+                    io.memDataIn   := gpRegs(rd).out(7, 0)
+
+                    printf(
+                        cf"execute: sb: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    )
+                }
+                is(Opcode.Sh) {
                     io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
                     io.memDataLoad := true.B
                     io.memDataIn   := gpRegs(rd).out(7, 0)
                     cycles         := 1.U
                 }
-                is(1.U) {
+
+                is(Opcode.Exit) {
+                    io.exit := true.B
+                    printf(cf"execute: exit\n")
+                }
+            }
+        }
+        is(1.U) {
+            printf("2nd cycle:\n");
+
+            switch(op) {
+                is(Opcode.Lh) {
+                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
+                    io.memDataLoad  := false.B
+                    gpRegs(rd).in   := Cat(io.memDataOut, lhValue).asSInt.pad(WORD_LEN).asUInt
+                    gpRegs(rd).load := true.B
+                    printf(
+                        cf"execute: lh: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    )
+                }
+                is(Opcode.Lhu) {
+                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
+                    io.memDataLoad  := false.B
+                    gpRegs(rd).in   := Cat(io.memDataOut, lhValue).zext.pad(WORD_LEN).asUInt
+                    gpRegs(rd).load := true.B
+                    printf(
+                        cf"execute: lhu: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    )
+                }
+                is(Opcode.Sh) {
                     io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
                     io.memDataLoad := true.B
                     io.memDataIn   := gpRegs(rd).out(15, 8)
-                    cycles         := 0.U
                     printf(
                         cf"execute: sh: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
                     )
                 }
             }
-        }
 
-        is(Opcode.Exit) {
-            io.exit := true.B
-            printf(cf"execute: exit\n")
+            // reset cycles
+            cycles := 0.U
         }
     }
 }
