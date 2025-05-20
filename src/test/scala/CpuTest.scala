@@ -165,7 +165,7 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             gpRegs(2).expect(3.U)
 
             c.clock.step(2)
-            gpRegs(3).expect(addi_r0_r0_3.U)
+            gpRegs(3).expect(0x2009.U)
         }
     }
 }
