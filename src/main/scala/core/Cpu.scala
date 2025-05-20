@@ -5,50 +5,71 @@ import chisel3.util._
 import core.Consts._
 
 class Cpu extends Module {
-    // (op, rd, rs1, rs2, imm)
+    // (op, rd, rs1, rs2, imm/offset)
     def decode(inst: UInt): (Opcode.Type, UInt, UInt, UInt, UInt) = {
-        val op = inst(15, 11)
+        val op  = Opcode.fromInst(inst)
+        val fmt = Opcode.toFormatType(op)
 
-        // type R
-        val rd  = inst(10, 8)
-        val rs1 = inst(7, 5)
-        val rs2 = inst(4, 2)
+        val rd  = WireDefault(0.U(3.W))
+        val rs1 = WireDefault(0.U(3.W))
+        val rs2 = WireDefault(0.U(3.W))
+        val imm = WireDefault(0.U(WORD_LEN.W))
 
-        // type I
-        val imm = inst(4, 0)
-
-        val decoded = WireDefault(Opcode.Invalid)
-        switch(op) {
-            is(OP_ADD.U(5.W)) { decoded := Opcode.Add }
-            is(OP_ADDI.U(5.W)) { decoded := Opcode.Addi }
-            is(OP_SUB.U(5.W)) { decoded := Opcode.Sub }
-            is(OP_SUBI.U(5.W)) { decoded := Opcode.Subi }
-            is(OP_AND.U(5.W)) { decoded := Opcode.And }
-            is(OP_ANDI.U(5.W)) { decoded := Opcode.Andi }
-            is(OP_OR.U(5.W)) { decoded := Opcode.Or }
-            is(OP_ORI.U(5.W)) { decoded := Opcode.Ori }
-            is(OP_XOR.U(5.W)) { decoded := Opcode.Xor }
-            is(OP_XORI.U(5.W)) { decoded := Opcode.Xori }
-            is(OP_SLL.U(5.W)) { decoded := Opcode.Sll }
-            is(OP_SLLI.U(5.W)) { decoded := Opcode.Slli }
-            is(OP_SRL.U(5.W)) { decoded := Opcode.Srl }
-            is(OP_SRLI.U(5.W)) { decoded := Opcode.Srli }
-            is(OP_SRA.U(5.W)) { decoded := Opcode.Sra }
-            is(OP_SRAI.U(5.W)) { decoded := Opcode.Srai }
-            is(OP_SLT.U(5.W)) { decoded := Opcode.Slt }
-            is(OP_SLTI.U(5.W)) { decoded := Opcode.Slti }
-            is(OP_SLTU.U(5.W)) { decoded := Opcode.Sltu }
-            is(OP_SLTIU.U(5.W)) { decoded := Opcode.Sltiu }
-            is(OP_LB.U(5.W)) { decoded := Opcode.Lb }
-            is(OP_LBU.U(5.W)) { decoded := Opcode.Lbu }
-            is(OP_LH.U(5.W)) { decoded := Opcode.Lh }
-            is(OP_LHU.U(5.W)) { decoded := Opcode.Lhu }
-            is(OP_SB.U(5.W)) { decoded := Opcode.Sb }
-            is(OP_SH.U(5.W)) { decoded := Opcode.Sh }
-            is(OP_EXIT.U(5.W)) { decoded := Opcode.Exit }
+        switch(fmt) {
+            is(FormatType.R) {
+                rd  := inst(10, 8)
+                rs1 := inst(7, 5)
+                rs2 := inst(4, 2)
+            }
+            is(FormatType.I) {
+                rd  := inst(10, 8)
+                rs1 := inst(7, 5)
+                imm := inst(4, 0)
+            }
+            is(FormatType.J) {
+                rd  := inst(10, 8)
+                imm := inst(7, 0)
+            }
+            is(FormatType.B) {
+                rs1 := inst(10, 8)
+                rs2 := inst(7, 5)
+                imm := inst(4, 0)
+            }
         }
 
-        (decoded, rd, rs1, rs2, imm)
+        val out_rd  = WireDefault(0.U(3.W))
+        val out_rs1 = WireDefault(0.U(3.W))
+        val out_rs2 = WireDefault(0.U(3.W))
+        val out_imm = WireDefault(0.U(WORD_LEN.W))
+
+        switch(fmt) {
+            is(FormatType.R) {
+                out_rd  := rd
+                out_rs1 := rs1
+                out_rs2 := rs2
+                out_imm := 0.U
+            }
+            is(FormatType.I) {
+                out_rd  := rd
+                out_rs1 := rs1
+                out_rs2 := 0.U
+                out_imm := imm
+            }
+            is(FormatType.J) {
+                out_rd  := rd
+                out_rs1 := 0.U
+                out_rs2 := 0.U
+                out_imm := imm
+            }
+            is(FormatType.B) {
+                out_rd  := 0.U
+                out_rs1 := rs1
+                out_rs2 := rs2
+                out_imm := imm
+            }
+        }
+
+        (op, out_rd, out_rs1, out_rs2, out_imm)
     }
 
     val io = IO(new Bundle {
@@ -60,14 +81,11 @@ class Cpu extends Module {
         val inst   = Input(UInt(WORD_LEN.W))
         val pc     = Output(UInt(WORD_LEN.W))
         val gpRegs = Output(Vec(NUM_GP_REGS, UInt(WORD_LEN.W)))
-        val exit   = Output(Bool())
     })
 
     io.memDataAddr := 0.U(WORD_LEN.W)
     io.memDataIn   := 0.U(BYTE_LEN.W)
     io.memDataLoad := false.B
-
-    io.exit := false.B
 
     // general purpose registers
     val gpRegs = VecInit(Seq.fill(NUM_GP_REGS)(Module(new Register()).io))
@@ -76,9 +94,6 @@ class Cpu extends Module {
         gpRegs(i).load := false.B
         io.gpRegs(i)   := gpRegs(i).out
     }
-
-    // control status register
-    // val csr = Module(new Register())
 
     val pc = Module(new Register(START_ADDR.U(WORD_LEN.W)))
     pc.io.in   := pc.io.out
@@ -128,14 +143,6 @@ class Cpu extends Module {
                     gpRegs(rd).load := true.B
 
                     printf(cf"\tsub: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
-                }
-                is(Opcode.Subi) {
-                    alu.io.a        := gpRegs(rs1).out
-                    alu.io.b        := imm
-                    alu.io.op       := AluOpcode.Sub
-                    gpRegs(rd).in   := alu.io.out
-                    gpRegs(rd).load := true.B
-                    printf(cf"\tsubi: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.And) {
                     alu.io.a        := gpRegs(rs1).out
@@ -283,7 +290,7 @@ class Cpu extends Module {
                         cf"\tlbu: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
                     )
                 }
-                is(Opcode.Lh, Opcode.Lhu) {
+                is(Opcode.Lh) {
                     io.memDataAddr := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
                     io.memDataLoad := false.B
                     lhValue        := io.memDataOut
@@ -304,11 +311,6 @@ class Cpu extends Module {
                     io.memDataIn   := gpRegs(rd).out(7, 0)
                     cycles         := 1.U
                 }
-
-                is(Opcode.Exit) {
-                    io.exit := true.B
-                    printf(cf"\texit\n")
-                }
             }
         }
         is(1.U) {
@@ -320,15 +322,6 @@ class Cpu extends Module {
                     gpRegs(rd).load := true.B
                     printf(
                         cf"\tlh: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
-                    )
-                }
-                is(Opcode.Lhu) {
-                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
-                    io.memDataLoad  := false.B
-                    gpRegs(rd).in   := Cat(io.memDataOut, lhValue).zext.pad(WORD_LEN).asUInt
-                    gpRegs(rd).load := true.B
-                    printf(
-                        cf"\tlhu: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
                     )
                 }
                 is(Opcode.Sh) {
@@ -346,7 +339,7 @@ class Cpu extends Module {
     }
 
     when(cycles === 0.U) {
-        when(!(op === Opcode.Lh || op === Opcode.Lhu || op === Opcode.Sh)) {
+        when(!(op === Opcode.Lh || op === Opcode.Sh)) {
             pc.io.in   := pc.io.out + (WORD_LEN.U / BYTE_LEN.U).asUInt
             pc.io.load := true.B
         }
