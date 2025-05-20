@@ -116,6 +116,13 @@ class Cpu extends Module {
     alu.io.op := AluOpcode.Add
 
     printf(cf"execute (cycles: $cycles):\n")
+    val beqResult  = op === Opcode.Beq && gpRegs(rs1).out === gpRegs(rs2).out
+    val bneResult  = op === Opcode.Bne && gpRegs(rs1).out =/= gpRegs(rs2).out
+    val bltResult  = op === Opcode.Blt && gpRegs(rs1).out.asSInt < gpRegs(rs2).out.asSInt
+    val bgeResult  = op === Opcode.Bge && gpRegs(rs1).out.asSInt >= gpRegs(rs2).out.asSInt
+    val bltuResult = op === Opcode.Bltu && gpRegs(rs1).out < gpRegs(rs2).out
+    val bgeuResult = op === Opcode.Bgeu && gpRegs(rs1).out >= gpRegs(rs2).out
+
     switch(cycles) {
         is(0.U) {
             switch(op) {
@@ -311,6 +318,75 @@ class Cpu extends Module {
                     io.memDataIn   := gpRegs(rd).out(7, 0)
                     cycles         := 1.U
                 }
+                is(Opcode.Jmp) {
+                    gpRegs(rd).in   := pc.io.out + (WORD_LEN.U / BYTE_LEN.U).asUInt
+                    gpRegs(rd).load := true.B
+                    pc.io.in        := (pc.io.out.asSInt + imm.asSInt).asUInt
+                    pc.io.load      := true.B
+                    printf(cf"\tjmp: rd: 0x${gpRegs(rd).in}%x, offset: ${imm.asSInt}\n")
+                }
+                is(Opcode.Jmpr) {
+                    val newPc = pc.io.out + (WORD_LEN.U / BYTE_LEN.U).asUInt
+                    pc.io.in        := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt & ~1.U
+                    pc.io.load      := true.B
+                    gpRegs(rd).in   := newPc
+                    gpRegs(rd).load := true.B
+                    printf(cf"\tjmpr: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n")
+                }
+                is(Opcode.Beq) {
+                    when(beqResult) {
+                        pc.io.in   := (pc.io.out.asSInt + imm.asSInt).asUInt
+                        pc.io.load := true.B
+                    }
+                    printf(
+                        cf"\tbeq: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
+                    )
+                }
+                is(Opcode.Bne) {
+                    when(bneResult) {
+                        pc.io.in   := (pc.io.out.asSInt + imm.asSInt).asUInt
+                        pc.io.load := true.B
+                    }
+                    printf(
+                        cf"\tbne: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
+                    )
+                }
+                is(Opcode.Blt) {
+                    when(bltResult) {
+                        pc.io.in   := (pc.io.out.asSInt + imm.asSInt).asUInt
+                        pc.io.load := true.B
+                    }
+                    printf(
+                        cf"\tblt: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
+                    )
+                }
+                is(Opcode.Bge) {
+                    when(bgeResult) {
+                        pc.io.in   := (pc.io.out.asSInt + imm.asSInt).asUInt
+                        pc.io.load := true.B
+                    }
+                    printf(
+                        cf"\tbge: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
+                    )
+                }
+                is(Opcode.Bltu) {
+                    when(bltuResult) {
+                        pc.io.in   := (pc.io.out.asSInt + imm.asSInt).asUInt
+                        pc.io.load := true.B
+                    }
+                    printf(
+                        cf"\tbltu: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
+                    )
+                }
+                is(Opcode.Bgeu) {
+                    when(bgeuResult) {
+                        pc.io.in   := (pc.io.out.asSInt + imm.asSInt).asUInt
+                        pc.io.load := true.B
+                    }
+                    printf(
+                        cf"\tbgeu: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
+                    )
+                }
             }
         }
         is(1.U) {
@@ -339,7 +415,9 @@ class Cpu extends Module {
     }
 
     when(cycles === 0.U) {
-        when(!(op === Opcode.Lh || op === Opcode.Sh)) {
+        when(
+            !(op === Opcode.Lh || op === Opcode.Sh || op === Opcode.Jmp || op === Opcode.Jmpr || beqResult || bneResult || bltResult || bgeResult || bltuResult || bgeuResult)
+        ) {
             pc.io.in   := pc.io.out + (WORD_LEN.U / BYTE_LEN.U).asUInt
             pc.io.load := true.B
         }

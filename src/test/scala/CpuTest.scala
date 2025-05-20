@@ -146,4 +146,118 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             gpRegs(3).expect(0x2009.U)
         }
     }
+
+    it should "jump instructions" in {
+        // jmp r1, 4
+        val jmp_r1_4 = (0x18 << 11) | ((1 & 0x7) << 8) | (4 & 0xff)
+        // addi r2, r0, 7
+        val addi_r2_r0_7 = (0x1 << 11) | ((2 & 0x7) << 8) | ((0 & 0x7) << 5) | (7 & 0x1f)
+        // addi r3, r0, 9
+        val addi_r3_r0_9 = (0x1 << 11) | ((3 & 0x7) << 8) | ((0 & 0x7) << 5) | (9 & 0x1f)
+        // jmpr r4, r1, 2
+        val jmpr_r4_r1_2 = (0x19 << 11) | ((4 & 0x7) << 8) | ((1 & 0x7) << 5) | (2 & 0x1f)
+        // addi r5, r0, 11
+        val addi_r5_r0_11 = (0x1 << 11) | ((5 & 0x7) << 8) | ((0 & 0x7) << 5) | (11 & 0x1f)
+        // addi r6, r0, 13
+        val addi_r6_r0_13 = (0x1 << 11) | ((6 & 0x7) << 8) | ((0 & 0x7) << 5) | (13 & 0x1f)
+
+        val prog = Seq(
+            jmp_r1_4,
+            addi_r2_r0_7,
+            addi_r3_r0_9,
+            jmpr_r4_r1_2,
+            addi_r5_r0_11,
+            addi_r6_r0_13
+        ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
+
+        test(new Top(prog)) { c =>
+            val gpRegs = c.io.gpRegs
+
+            // jmp r1, 4
+            c.clock.step(1)
+            gpRegs(1).expect(2.U) // r1 = pc+2 (0+2)
+
+            c.clock.step(1)
+            gpRegs(3).expect(9.U) // addi r3, r0, 9
+
+            // jmpr r4, r1, 2 (pc = r1+2 = 2+2 = 4, r4 = pc+2 = 8)
+            c.clock.step(1)
+            gpRegs(4).expect(8.U) // r4 = pc+2 (6+2=8)
+
+            c.clock.step(1)
+            gpRegs(6).expect(0.U)
+        }
+    }
+
+    it should "branch and jump instructions" in {
+        // addi r1, r0, 5
+        val addi_r1_r0_5 = (0x1 << 11) | ((1 & 0x7) << 8) | ((0 & 0x7) << 5) | (5 & 0x1f)
+        // addi r2, r0, 5
+        val addi_r2_r0_5 = (0x1 << 11) | ((2 & 0x7) << 8) | ((0 & 0x7) << 5) | (5 & 0x1f)
+        // addi r3, r0, 3
+        val addi_r3_r0_3 = (0x1 << 11) | ((3 & 0x7) << 8) | ((0 & 0x7) << 5) | (3 & 0x1f)
+        // beq r1, r2, 4
+        val beq_r1_r2_4 = (0x1a << 11) | ((1 & 0x7) << 8) | ((2 & 0x7) << 5) | (4 & 0x1f)
+        // addi r0, r0, 99
+        val addi_r0_r0_99 = (0x1 << 11) | ((0 & 0x7) << 8) | ((0 & 0x7) << 5) | (99 & 0x1f)
+        // bne r1, r3, 4
+        val bne_r1_r3_4 = (0x1b << 11) | ((1 & 0x7) << 8) | ((3 & 0x7) << 5) | (4 & 0x1f)
+        // addi r0, r0, 88
+        val addi_r0_r0_88 = (0x1 << 11) | ((0 & 0x7) << 8) | ((0 & 0x7) << 5) | (88 & 0x1f)
+        // blt r3, r1, 4
+        val blt_r3_r1_4 = (0x1c << 11) | ((3 & 0x7) << 8) | ((1 & 0x7) << 5) | (4 & 0x1f)
+        // addi r0, r0, 77
+        val addi_r0_r0_77 = (0x1 << 11) | ((0 & 0x7) << 8) | ((0 & 0x7) << 5) | (77 & 0x1f)
+        // bge r1, r3, 4
+        val bge_r1_r3_4 = (0x1d << 11) | ((1 & 0x7) << 8) | ((3 & 0x7) << 5) | (4 & 0x1f)
+        // addi r0, r0, 66
+        val addi_r0_r0_66 = (0x1 << 11) | ((0 & 0x7) << 8) | ((0 & 0x7) << 5) | (66 & 0x1f)
+        // bltu r3, r1, 4
+        val bltu_r3_r1_4 = (0x1e << 11) | ((3 & 0x7) << 8) | ((1 & 0x7) << 5) | (4 & 0x1f)
+        // addi r0, r0, 55
+        val addi_r0_r0_55 = (0x1 << 11) | ((0 & 0x7) << 8) | ((0 & 0x7) << 5) | (55 & 0x1f)
+        // bgeu r1, r3, 4
+        val bgeu_r1_r3_4 = (0x1f << 11) | ((1 & 0x7) << 8) | ((3 & 0x7) << 5) | (4 & 0x1f)
+        // addi r0, r0, 44
+        val addi_r0_r0_44 = (0x1 << 11) | ((0 & 0x7) << 8) | ((0 & 0x7) << 5) | (44 & 0x1f)
+        // addi r0, r0, 1
+        val addi_r0_r0_1 = (0x1 << 11) | ((0 & 0x7) << 8) | ((0 & 0x7) << 5) | (1 & 0x1f)
+
+        val prog = Seq(
+            addi_r1_r0_5,
+            addi_r2_r0_5,
+            addi_r3_r0_3,
+            beq_r1_r2_4,
+            addi_r0_r0_99,
+            bne_r1_r3_4,
+            addi_r0_r0_88,
+            blt_r3_r1_4,
+            addi_r0_r0_77,
+            bge_r1_r3_4,
+            addi_r0_r0_66,
+            bltu_r3_r1_4,
+            addi_r0_r0_55,
+            bgeu_r1_r3_4,
+            addi_r0_r0_44,
+            addi_r0_r0_1
+        ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
+
+        test(new Top(prog)) { c =>
+            val gpRegs = c.io.gpRegs
+
+            // addi r1, r0, 5
+            c.clock.step(1)
+            gpRegs(1).expect(5.U)
+            // addi r2, r0, 5
+            c.clock.step(1)
+            gpRegs(2).expect(5.U)
+            // addi r3, r0, 3
+            c.clock.step(1)
+            gpRegs(3).expect(3.U)
+
+            // addi r0, r0, 1
+            c.clock.step(7)
+            gpRegs(0).expect(1.U)
+        }
+    }
 }
