@@ -77,3 +77,7 @@ Vulcan-16 - 16bit CPU
 | BGE         | B    | 0x1d   | bge rs1, rs2, offset    | if(r[rs1].i >= rs[rs2].i) pc += offset.i                            |
 | BLTU        | B    | 0x1e   | bltu rs1, rs2, offset   | if(r[rs1] < rs[rs2]) pc += offset.i                                 |
 | BGEU        | B    | 0x1f   | bgeu rs1, rs2, offset   | if(r[rs1] >= rs[rs2]) pc += offset.i                                |
+
+## Other tools
+
+-   [vul16-asm](https://github.com/zakki0925224/vul16-asm) - Assembler
