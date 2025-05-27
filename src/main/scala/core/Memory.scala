@@ -7,13 +7,16 @@ import core.Consts._
 
 class Memory(memInit: Seq[Int]) extends Module {
     val io = IO(new Bundle {
-        val dataAddr = Input(UInt(WORD_LEN.W))
-        val dataIn   = Input(UInt(BYTE_LEN.W))
-        val dataOut  = Output(UInt(BYTE_LEN.W))
-        val dataLoad = Input(Bool())
+        val dataAddr  = Input(UInt(WORD_LEN.W))
+        val dataIn    = Input(UInt(BYTE_LEN.W))
+        val dataOut   = Output(UInt(BYTE_LEN.W))
+        val dataWrite = Input(Bool())
 
         val instAddr = Input(UInt(WORD_LEN.W))
         val instOut  = Output(UInt(WORD_LEN.W))
+
+        val mmioInAddr = Input(UInt(WORD_LEN.W))
+        val mmioIn     = Input(UInt(BYTE_LEN.W))
     })
 
     val mem = Mem(MEM_SIZE, UInt(8.W))
@@ -27,7 +30,11 @@ class Memory(memInit: Seq[Int]) extends Module {
     )
 
     io.dataOut := mem(io.dataAddr)
-    when(io.dataLoad) {
+    when(io.dataWrite) {
         mem(io.dataAddr) := io.dataIn
+    }
+
+    when(io.mmioInAddr >= MMIO_START_ADDR.U) {
+        mem(io.mmioInAddr) := io.mmioIn
     }
 }
