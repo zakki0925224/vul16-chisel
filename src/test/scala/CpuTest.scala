@@ -60,7 +60,7 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             xori_r0_r7_5
         ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
 
-        test(new Top(prog)) { c =>
+        test(new Core(Some(prog))) { c =>
             val gpRegs = c.io.gpRegs
 
             // add  r0, r0, r0
@@ -132,7 +132,7 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             lh_r3_r0_0
         ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
 
-        test(new Top(prog)) { c =>
+        test(new Core(Some(prog))) { c =>
             val gpRegs = c.io.gpRegs
 
             c.clock.step(2)
@@ -170,7 +170,7 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             addi_r6_r0_13
         ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
 
-        test(new Top(prog)) { c =>
+        test(new Core(Some(prog))) { c =>
             val gpRegs = c.io.gpRegs
 
             // jmp r1, 4
@@ -242,7 +242,7 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             addi_r0_r0_1
         ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
 
-        test(new Top(prog)) { c =>
+        test(new Core(Some(prog))) { c =>
             val gpRegs = c.io.gpRegs
 
             // addi r1, r0, 5

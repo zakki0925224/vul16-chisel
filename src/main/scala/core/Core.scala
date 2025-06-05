@@ -3,7 +3,7 @@ package core
 import chisel3._
 import core.Consts._
 
-class Top(memInit: Seq[Int] = MEM_INIT) extends Module {
+class Core(memInit: Option[Seq[Int]] = None) extends Module {
     val io = IO(new Bundle {
         val pc     = Output(UInt(WORD_LEN.W))
         val inst   = Output(UInt(WORD_LEN.W))

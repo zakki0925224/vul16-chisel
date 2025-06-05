@@ -3,7 +3,7 @@ import circt.stage.ChiselStage
 
 object Main extends App {
     ChiselStage.emitSystemVerilogFile(
-        new Top(),
+        new Core(),
         args = Array("--target-dir", "output"),
         firtoolOpts = Array(
             "-disable-all-randomization",

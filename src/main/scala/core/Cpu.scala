@@ -99,23 +99,23 @@ class Cpu extends Module {
     pc.io.in    := pc.io.out
     io.pc       := pc.io.out
     pc.io.write := false.B
-    printf(cf"fetch:\n")
-    printf(cf"\tpc: 0x${pc.io.out}%x\n")
+    // printf(cf"fetch:\n")
+    // printf(cf"\tpc: 0x${pc.io.out}%x\n")
 
     val cycles  = RegInit(0.U(WORD_LEN.W))
     val lhValue = RegInit(0.U(BYTE_LEN.W))
 
     val inst                    = io.inst
     val (op, rd, rs1, rs2, imm) = decode(inst)
-    printf(cf"decode:\n")
-    printf(cf"\tinst: 0x${inst}%x => op: $op\n")
+    // printf(cf"decode:\n")
+    // printf(cf"\tinst: 0x${inst}%x => op: $op\n")
 
     val alu = Module(new Alu())
     alu.io.a  := 0.U
     alu.io.b  := 0.U
     alu.io.op := AluOpcode.Add
 
-    printf(cf"execute (cycles: $cycles):\n")
+    // printf(cf"execute (cycles: $cycles):\n")
     val beqResult  = op === Opcode.Beq && gpRegs(rs1).out === gpRegs(rs2).out
     val bneResult  = op === Opcode.Bne && gpRegs(rs1).out =/= gpRegs(rs2).out
     val bltResult  = op === Opcode.Blt && gpRegs(rs1).out.asSInt < gpRegs(rs2).out.asSInt
@@ -132,7 +132,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Add
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tadd: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    //// printf(cf"\tadd: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Addi) {
                     alu.io.a         := gpRegs(rs1).out
@@ -140,7 +140,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Add
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\taddi: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\taddi: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Sub) {
                     alu.io.a         := gpRegs(rs1).out
@@ -149,7 +149,7 @@ class Cpu extends Module {
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
 
-                    printf(cf"\tsub: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tsub: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.And) {
                     alu.io.a         := gpRegs(rs1).out
@@ -157,7 +157,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.And
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tand: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tand: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Andi) {
                     alu.io.a         := gpRegs(rs1).out
@@ -165,7 +165,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.And
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tandi: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tandi: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Or) {
                     alu.io.a         := gpRegs(rs1).out
@@ -173,7 +173,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Or
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tor: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tor: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Ori) {
                     alu.io.a         := gpRegs(rs1).out
@@ -181,7 +181,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Or
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tori: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tori: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Xor) {
                     alu.io.a         := gpRegs(rs1).out
@@ -189,7 +189,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Xor
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\txor: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\txor: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Xori) {
                     alu.io.a         := gpRegs(rs1).out
@@ -197,7 +197,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Xor
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\txori: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\txori: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Sll) {
                     alu.io.a         := gpRegs(rs1).out
@@ -205,7 +205,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Sll
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tsll: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tsll: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Slli) {
                     alu.io.a         := gpRegs(rs1).out
@@ -213,7 +213,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Sll
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tslli: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tslli: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Srl) {
                     alu.io.a         := gpRegs(rs1).out
@@ -221,7 +221,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Srl
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tsrl: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tsrl: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Srli) {
                     alu.io.a         := gpRegs(rs1).out
@@ -229,7 +229,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Srl
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tsrli: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tsrli: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Sra) {
                     alu.io.a         := gpRegs(rs1).out
@@ -237,7 +237,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Sra
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tsra: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tsra: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Srai) {
                     alu.io.a         := gpRegs(rs1).out
@@ -245,7 +245,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Sra
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tsrai: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tsrai: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Slt) {
                     alu.io.a         := gpRegs(rs1).out
@@ -253,7 +253,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Slt
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tslt: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tslt: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Slti) {
                     alu.io.a         := gpRegs(rs1).out
@@ -261,7 +261,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Slt
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tslti: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tslti: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Sltu) {
                     alu.io.a         := gpRegs(rs1).out
@@ -269,7 +269,7 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Sltu
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tsltu: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tsltu: rs1: 0x${alu.io.a}%x, rs2: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Sltiu) {
                     alu.io.a         := gpRegs(rs1).out
@@ -277,25 +277,25 @@ class Cpu extends Module {
                     alu.io.op        := AluOpcode.Sltu
                     gpRegs(rd).in    := alu.io.out
                     gpRegs(rd).write := true.B
-                    printf(cf"\tsltiu: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tsltiu: rs: 0x${alu.io.a}%x, imm: 0x${alu.io.b}%x, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Lb) {
                     io.memDataAddr   := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
                     io.memDataWrite  := false.B
                     gpRegs(rd).in    := io.memDataOut.asSInt.asUInt
                     gpRegs(rd).write := true.B
-                    printf(
-                        cf"\tlb: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
-                    )
+                    // printf(
+                    //     cf"\tlb: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    // )
                 }
                 is(Opcode.Lbu) {
                     io.memDataAddr   := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
                     io.memDataWrite  := false.B
                     gpRegs(rd).in    := io.memDataOut
                     gpRegs(rd).write := true.B
-                    printf(
-                        cf"\tlbu: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
-                    )
+                    // printf(
+                    //     cf"\tlbu: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    // )
                 }
                 is(Opcode.Lh) {
                     io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
@@ -308,9 +308,9 @@ class Cpu extends Module {
                     io.memDataWrite := true.B
                     io.memDataIn    := gpRegs(rd).out(7, 0)
 
-                    printf(
-                        cf"\tsb: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
-                    )
+                    // printf(
+                    //     cf"\tsb: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    // )
                 }
                 is(Opcode.Sh) {
                     io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
@@ -323,7 +323,7 @@ class Cpu extends Module {
                     gpRegs(rd).write := true.B
                     pc.io.in         := (pc.io.out.asSInt + imm.asSInt).asUInt
                     pc.io.write      := true.B
-                    printf(cf"\tjmp: rd: 0x${gpRegs(rd).in}%x, offset: ${imm.asSInt}\n")
+                    // printf(cf"\tjmp: rd: 0x${gpRegs(rd).in}%x, offset: ${imm.asSInt}\n")
                 }
                 is(Opcode.Jmpr) {
                     val newPc = pc.io.out + (WORD_LEN.U / BYTE_LEN.U).asUInt
@@ -331,61 +331,61 @@ class Cpu extends Module {
                     pc.io.write      := true.B
                     gpRegs(rd).in    := newPc
                     gpRegs(rd).write := true.B
-                    printf(cf"\tjmpr: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n")
+                    // printf(cf"\tjmpr: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n")
                 }
                 is(Opcode.Beq) {
                     when(beqResult) {
                         pc.io.in    := (pc.io.out.asSInt + imm.asSInt).asUInt
                         pc.io.write := true.B
                     }
-                    printf(
-                        cf"\tbeq: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
-                    )
+                    // printf(
+                    //     cf"\tbeq: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
+                    // )
                 }
                 is(Opcode.Bne) {
                     when(bneResult) {
                         pc.io.in    := (pc.io.out.asSInt + imm.asSInt).asUInt
                         pc.io.write := true.B
                     }
-                    printf(
-                        cf"\tbne: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
-                    )
+                    // printf(
+                    //     cf"\tbne: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
+                    // )
                 }
                 is(Opcode.Blt) {
                     when(bltResult) {
                         pc.io.in    := (pc.io.out.asSInt + imm.asSInt).asUInt
                         pc.io.write := true.B
                     }
-                    printf(
-                        cf"\tblt: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
-                    )
+                    // printf(
+                    //     cf"\tblt: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
+                    // )
                 }
                 is(Opcode.Bge) {
                     when(bgeResult) {
                         pc.io.in    := (pc.io.out.asSInt + imm.asSInt).asUInt
                         pc.io.write := true.B
                     }
-                    printf(
-                        cf"\tbge: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
-                    )
+                    // printf(
+                    //     cf"\tbge: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
+                    // )
                 }
                 is(Opcode.Bltu) {
                     when(bltuResult) {
                         pc.io.in    := (pc.io.out.asSInt + imm.asSInt).asUInt
                         pc.io.write := true.B
                     }
-                    printf(
-                        cf"\tbltu: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
-                    )
+                    // printf(
+                    //     cf"\tbltu: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
+                    // )
                 }
                 is(Opcode.Bgeu) {
                     when(bgeuResult) {
                         pc.io.in    := (pc.io.out.asSInt + imm.asSInt).asUInt
                         pc.io.write := true.B
                     }
-                    printf(
-                        cf"\tbgeu: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
-                    )
+                    // printf(
+                    //     cf"\tbgeu: rs1: 0x${gpRegs(rs1).out}%x, rs2: 0x${gpRegs(rs2).out}%x, offset: ${imm.asSInt}\n"
+                    // )
                 }
             }
         }
@@ -396,17 +396,17 @@ class Cpu extends Module {
                     io.memDataWrite  := false.B
                     gpRegs(rd).in    := Cat(io.memDataOut, lhValue).asSInt.pad(WORD_LEN).asUInt
                     gpRegs(rd).write := true.B
-                    printf(
-                        cf"\tlh: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
-                    )
+                    // printf(
+                    //     cf"\tlh: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    // )
                 }
                 is(Opcode.Sh) {
                     io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
                     io.memDataWrite := true.B
                     io.memDataIn    := gpRegs(rd).out(15, 8)
-                    printf(
-                        cf"\tsh: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
-                    )
+                    // printf(
+                    //     cf"\tsh: rs: 0x${gpRegs(rs1).out}%x, offset: ${imm.asSInt}, rd: 0x${gpRegs(rd).in}%x\n"
+                    // )
                 }
             }
 

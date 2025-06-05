@@ -6,16 +6,9 @@ object Consts {
     val WORD_LEN        = 16
     val BYTE_LEN        = 8
     val NUM_GP_REGS     = 8
-    val MEM_SIZE        = 16384
+    val MEM_SIZE        = 0x10000 // 64KB
     val START_ADDR      = 0x0000
     val MMIO_START_ADDR = 0xf000
-
-    val MEM_INIT: Seq[Int] = Seq(
-        0x00,
-        0x00,
-        0x00,
-        0x00
-    )
 
     // opcodes
     val OP_ADD   = 0x00

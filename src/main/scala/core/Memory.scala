@@ -2,10 +2,9 @@ package core
 
 import chisel3._
 import chisel3.util._
-import chisel3.util.experimental.loadMemoryFromFile
 import core.Consts._
 
-class Memory(memInit: Seq[Int]) extends Module {
+class Memory(memInit: Option[Seq[Int]] = None) extends Module {
     val io = IO(new Bundle {
         val dataAddr  = Input(UInt(WORD_LEN.W))
         val dataIn    = Input(UInt(BYTE_LEN.W))
@@ -20,8 +19,10 @@ class Memory(memInit: Seq[Int]) extends Module {
     })
 
     val mem = Mem(MEM_SIZE, UInt(8.W))
-    for ((v, i) <- memInit.zipWithIndex) {
-        mem(i) := v.U(8.W)
+    memInit.foreach { init =>
+        for ((v, i) <- init.zipWithIndex) {
+            mem(i) := v.U(8.W)
+        }
     }
 
     io.instOut := Cat(
