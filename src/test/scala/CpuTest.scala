@@ -4,9 +4,31 @@ import core._
 import core.Consts._
 import org.scalatest.flatspec.AnyFlatSpec
 
+class TestHarness(prog: Option[Seq[Int]] = None) extends Module {
+    val io = IO(new Bundle {
+        val pc     = Output(UInt(WORD_LEN.W))
+        val inst   = Output(UInt(WORD_LEN.W))
+        val gpRegs = Output(Vec(NUM_GP_REGS, UInt(WORD_LEN.W)))
+    })
+
+    val core = Module(new Core())
+    val mem  = Module(new TestMemoryModule(prog))
+
+    io.pc     := core.io.pc
+    io.inst   := core.io.inst
+    io.gpRegs := core.io.gpRegs
+
+    mem.io.dataAddr    := core.io.memDataAddr
+    mem.io.dataIn      := core.io.memDataIn
+    core.io.memDataOut := mem.io.dataOut
+    mem.io.dataWrite   := core.io.memDataWrite
+    mem.io.instAddr    := core.io.pc
+    core.io.memInst    := mem.io.instOut
+}
+
 class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
     it should "increment pc" in {
-        test(new Cpu) { c =>
+        test(new TestHarness()) { c =>
             c.clock.step(1)
             c.io.pc.expect(2.U)
             c.clock.step(1)
@@ -60,7 +82,7 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             xori_r0_r7_5
         ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
 
-        test(new Core(Some(prog))) { c =>
+        test(new TestHarness(Some(prog))) { c =>
             val gpRegs = c.io.gpRegs
 
             // add  r0, r0, r0
@@ -132,7 +154,7 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             lh_r3_r0_0
         ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
 
-        test(new Core(Some(prog))) { c =>
+        test(new TestHarness(Some(prog))) { c =>
             val gpRegs = c.io.gpRegs
 
             c.clock.step(2)
@@ -170,7 +192,7 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             addi_r6_r0_13
         ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
 
-        test(new Core(Some(prog))) { c =>
+        test(new TestHarness(Some(prog))) { c =>
             val gpRegs = c.io.gpRegs
 
             // jmp r1, 4
@@ -242,7 +264,7 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             addi_r0_r0_1
         ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
 
-        test(new Core(Some(prog))) { c =>
+        test(new TestHarness(Some(prog))) { c =>
             val gpRegs = c.io.gpRegs
 
             // addi r1, r0, 5

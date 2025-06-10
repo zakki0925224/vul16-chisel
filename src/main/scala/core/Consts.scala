@@ -3,12 +3,10 @@ package core
 import chisel3._
 
 object Consts {
-    val WORD_LEN        = 16
-    val BYTE_LEN        = 8
-    val NUM_GP_REGS     = 8
-    val MEM_SIZE        = 0x10000 // 64KB
-    val START_ADDR      = 0x0000
-    val MMIO_START_ADDR = 0xf000
+    val WORD_LEN    = 16
+    val BYTE_LEN    = 8
+    val NUM_GP_REGS = 8
+    val START_ADDR  = 0x0000
 
     // opcodes
     val OP_ADD   = 0x00

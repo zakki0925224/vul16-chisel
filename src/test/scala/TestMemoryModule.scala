@@ -1,10 +1,10 @@
-package core
-
 import chisel3._
 import chisel3.util._
 import core.Consts._
 
-class Memory(memInit: Option[Seq[Int]] = None) extends Module {
+class TestMemoryModule(memInit: Option[Seq[Int]] = None) extends Module {
+    val MEM_SIZE = 0x1000 // 4KB memory
+
     val io = IO(new Bundle {
         val dataAddr  = Input(UInt(WORD_LEN.W))
         val dataIn    = Input(UInt(BYTE_LEN.W))
@@ -13,9 +13,6 @@ class Memory(memInit: Option[Seq[Int]] = None) extends Module {
 
         val instAddr = Input(UInt(WORD_LEN.W))
         val instOut  = Output(UInt(WORD_LEN.W))
-
-        val mmioInAddr = Input(UInt(WORD_LEN.W))
-        val mmioIn     = Input(UInt(BYTE_LEN.W))
     })
 
     val mem = Mem(MEM_SIZE, UInt(8.W))
@@ -33,9 +30,5 @@ class Memory(memInit: Option[Seq[Int]] = None) extends Module {
     io.dataOut := mem(io.dataAddr)
     when(io.dataWrite) {
         mem(io.dataAddr) := io.dataIn
-    }
-
-    when(io.mmioInAddr >= MMIO_START_ADDR.U) {
-        mem(io.mmioInAddr) := io.mmioIn
     }
 }
