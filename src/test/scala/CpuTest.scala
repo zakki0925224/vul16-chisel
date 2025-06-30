@@ -24,6 +24,9 @@ class TestHarness(prog: Option[Seq[Int]] = None) extends Module {
     mem.io.dataWrite   := core.io.memDataWrite
     mem.io.instAddr    := core.io.pc
     core.io.memInst    := mem.io.instOut
+
+    core.io.debug_halt := false.B
+    core.io.debug_step := false.B
 }
 
 class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
@@ -129,8 +132,9 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             gpRegs(7).expect(0.U)
 
             // xori r0, r7, 5
+            // but zero register should not change
             c.clock.step(1)
-            gpRegs(0).expect(5.U)
+            gpRegs(0).expect(0.U)
         }
     }
 
@@ -158,7 +162,7 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             val gpRegs = c.io.gpRegs
 
             c.clock.step(2)
-            gpRegs(0).expect(3.U)
+            gpRegs(0).expect(0.U)
             gpRegs(1).expect(0x1f.U)
 
             c.clock.step(4)
@@ -278,8 +282,9 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             gpRegs(3).expect(3.U)
 
             // addi r0, r0, 1
+            // but zero register should not change
             c.clock.step(7)
-            gpRegs(0).expect(1.U)
+            gpRegs(0).expect(0.U)
         }
     }
 }

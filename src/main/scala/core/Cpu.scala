@@ -93,9 +93,16 @@ class Cpu extends Module {
     // general purpose registers
     val gpRegs = VecInit(Seq.fill(NUM_GP_REGS)(Module(new Register()).io))
     for (i <- 0 until NUM_GP_REGS) {
-        gpRegs(i).in    := gpRegs(i).out
-        gpRegs(i).write := false.B
-        io.gpRegs(i)    := gpRegs(i).out
+        // zero register
+        if (i == 0) {
+            gpRegs(0).in    := 0.U(WORD_LEN.W)
+            gpRegs(0).write := false.B
+            io.gpRegs(0)    := 0.U(WORD_LEN.W)
+        } else {
+            gpRegs(i).in    := gpRegs(i).out
+            gpRegs(i).write := false.B
+            io.gpRegs(i)    := gpRegs(i).out
+        }
     }
 
     val pc = Module(new Register(START_ADDR.U(WORD_LEN.W)))
