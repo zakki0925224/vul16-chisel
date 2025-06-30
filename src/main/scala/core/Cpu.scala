@@ -13,7 +13,7 @@ class Cpu extends Module {
         val rd  = WireDefault(0.U(3.W))
         val rs1 = WireDefault(0.U(3.W))
         val rs2 = WireDefault(0.U(3.W))
-        val imm = WireDefault(0.U(WORD_LEN.W))
+        val imm = WireDefault(0.S(WORD_LEN.W))
 
         switch(fmt) {
             is(FormatType.R) {
@@ -24,52 +24,52 @@ class Cpu extends Module {
             is(FormatType.I) {
                 rd  := inst(10, 8)
                 rs1 := inst(7, 5)
-                imm := inst(4, 0)
+                imm := inst(4, 0).asSInt
             }
             is(FormatType.J) {
                 rd  := inst(10, 8)
-                imm := inst(7, 0)
+                imm := inst(7, 0).asSInt
             }
             is(FormatType.B) {
                 rs1 := inst(10, 8)
                 rs2 := inst(7, 5)
-                imm := inst(4, 0)
+                imm := inst(4, 0).asSInt
             }
         }
 
         val out_rd  = WireDefault(0.U(3.W))
         val out_rs1 = WireDefault(0.U(3.W))
         val out_rs2 = WireDefault(0.U(3.W))
-        val out_imm = WireDefault(0.U(WORD_LEN.W))
+        val out_imm = WireDefault(0.S(WORD_LEN.W))
 
         switch(fmt) {
             is(FormatType.R) {
                 out_rd  := rd
                 out_rs1 := rs1
                 out_rs2 := rs2
-                out_imm := 0.U
+                out_imm := 0.S(WORD_LEN.W)
             }
             is(FormatType.I) {
                 out_rd  := rd
                 out_rs1 := rs1
-                out_rs2 := 0.U
+                out_rs2 := 0.U(3.W)
                 out_imm := imm
             }
             is(FormatType.J) {
                 out_rd  := rd
-                out_rs1 := 0.U
-                out_rs2 := 0.U
+                out_rs1 := 0.U(3.W)
+                out_rs2 := 0.U(3.W)
                 out_imm := imm
             }
             is(FormatType.B) {
-                out_rd  := 0.U
+                out_rd  := 0.U(3.W)
                 out_rs1 := rs1
                 out_rs2 := rs2
                 out_imm := imm
             }
         }
 
-        (op, out_rd, out_rs1, out_rs2, out_imm)
+        (op, out_rd, out_rs1, out_rs2, out_imm.asUInt)
     }
 
     val io = IO(new Bundle {

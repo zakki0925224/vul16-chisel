@@ -139,37 +139,64 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
     }
 
     it should "load store instructions" in {
-        // addi r0, r0, 3
-        val addi_r0_r0_3 = (0x1 << 11) | ((0 & 0x7) << 8) | ((0 & 0x7) << 5) | (3 & 0x1f)
-        // addi r1, r1, 0x1f
-        val addi_r1_r1_0x1f = (0x1 << 11) | ((1 & 0x7) << 8) | ((1 & 0x7) << 5) | (0x1f & 0x1f)
-        // sb r0, r1, 0
-        val sb_r0_r1_0 = (0x16 << 11) | ((0 & 0x7) << 8) | ((1 & 0x7) << 5)
-        // lb r2, r1, 0
-        val lb_r2_r1_0 = (0x13 << 11) | ((2 & 0x7) << 8) | ((1 & 0x7) << 5)
-        // lh r3, r0, 0
-        val lh_r3_r0_0 = (0x15 << 11) | ((3 & 0x7) << 8) | ((0 & 0x7) << 5)
+        // addi r1, r0, 15   ; r1 = 15 (max positive 5bit)
+        val addi_r1_r0_15 = (0x1 << 11) | ((1 & 0x7) << 8) | ((0 & 0x7) << 5) | (15 & 0x1f)
+        // addi r2, r0, -8   ; r2 = 0xfff8 (min negative 5bit)
+        val addi_r2_r0_m8 = (0x1 << 11) | ((2 & 0x7) << 8) | ((0 & 0x7) << 5) | (0x18 & 0x1f) // 0x18=24, 5bit for -8
+        // sb r1, r0, 0        ; mem[0] = 0x0f
+        val sb_r1_r0_0 = (0x16 << 11) | ((1 & 0x7) << 8) | ((0 & 0x7) << 5)
+        // sb r2, r0, 1        ; mem[1] = 0xf8
+        val sb_r2_r0_1 = (0x16 << 11) | ((2 & 0x7) << 8) | ((0 & 0x7) << 5) | 1
+        // lb r3, r0, 0        ; r3 = 0x0f (sign-extended)
+        val lb_r3_r0_0 = (0x13 << 11) | ((3 & 0x7) << 8) | ((0 & 0x7) << 5)
+        // lbu r4, r0, 1       ; r4 = 0xf8 (zero-extended)
+        val lbu_r4_r0_1 = (0x14 << 11) | ((4 & 0x7) << 8) | ((0 & 0x7) << 5) | 1
+        // lh r5, r0, 0        ; r5 = 0xf80f (0xf8 << 8 | 0x0f)
+        val lh_r5_r0_0 = (0x15 << 11) | ((5 & 0x7) << 8) | ((0 & 0x7) << 5)
+        // sh r1, r0, 2        ; mem[2] = 0x0f, mem[3] = 0x00
+        val sh_r1_r0_2 = (0x17 << 11) | ((1 & 0x7) << 8) | ((0 & 0x7) << 5) | 2
+        // lh r6, r0, 2        ; r6 = 0x000f
+        val lh_r6_r0_2 = (0x15 << 11) | ((6 & 0x7) << 8) | ((0 & 0x7) << 5) | 2
 
         val prog = Seq(
-            addi_r0_r0_3,
-            addi_r1_r1_0x1f,
-            sb_r0_r1_0,
-            lb_r2_r1_0,
-            lh_r3_r0_0
+            addi_r1_r0_15,
+            addi_r2_r0_m8,
+            sb_r1_r0_0,
+            sb_r2_r0_1,
+            lb_r3_r0_0,
+            lbu_r4_r0_1,
+            lh_r5_r0_0,
+            sh_r1_r0_2,
+            lh_r6_r0_2
         ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
 
         test(new TestHarness(Some(prog))) { c =>
             val gpRegs = c.io.gpRegs
 
+            // addi r1, r0, 15
+            c.clock.step(1)
+            gpRegs(1).expect(15.U)
+            // addi r2, r0, -8
+            c.clock.step(1)
+            gpRegs(2).expect((0xfffffff8L & 0xffff).U) // -8 (16bit)
+            // sb r1, r0, 0
+            c.clock.step(1)
+            // sb r2, r0, 1
+            c.clock.step(1)
+            // lb r3, r0, 0
+            c.clock.step(1)
+            gpRegs(3).expect(15.U) // 0x0f (sign-extended)
+            // lbu r4, r0, 1
+            c.clock.step(1)
+            gpRegs(4).expect(248.U) // 0xf8 (zero-extended)
+            // lh r5, r0, 0
             c.clock.step(2)
-            gpRegs(0).expect(0.U)
-            gpRegs(1).expect(0x1f.U)
-
-            c.clock.step(4)
-            gpRegs(2).expect(3.U)
-
-            c.clock.step(2)
-            gpRegs(3).expect(0x2009.U)
+            gpRegs(5).expect(0xf80f.U) // 0xf8 << 8 | 0x0f
+            // sh r1, r0, 2
+            c.clock.step(1)
+            // lh r6, r0, 2
+            c.clock.step(3)
+            gpRegs(6).expect(15.U) // 0x00 << 8 | 0x0f
         }
     }
 

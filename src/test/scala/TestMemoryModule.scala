@@ -16,9 +16,11 @@ class TestMemoryModule(memInit: Option[Seq[Int]] = None) extends Module {
     })
 
     val mem = Mem(MEM_SIZE, UInt(8.W))
-    memInit.foreach { init =>
-        for ((v, i) <- init.zipWithIndex) {
-            mem(i) := v.U(8.W)
+    when(reset.asBool) {
+        memInit.foreach { init =>
+            for ((v, i) <- init.zipWithIndex) {
+                mem.write(i.U, v.U(8.W))
+            }
         }
     }
 
