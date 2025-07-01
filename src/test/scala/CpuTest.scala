@@ -3,6 +3,7 @@ import chiseltest._
 import core._
 import core.Consts._
 import org.scalatest.flatspec.AnyFlatSpec
+import java.nio.file.{Files, Paths}
 
 class TestHarness(prog: Option[Seq[Int]] = None) extends Module {
     val io = IO(new Bundle {
@@ -312,6 +313,39 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             // but zero register should not change
             c.clock.step(7)
             gpRegs(0).expect(0.U)
+        }
+    }
+
+    it should "assembler test" in {
+        val res = getClass.getResource("/asm_tests/label.bin")
+        require(res != null, "label.bin not found in resources")
+
+        val path           = Paths.get(res.toURI())
+        val prog: Seq[Int] = Files.readAllBytes(path).map(_ & 0xff).toSeq
+
+        test(new TestHarness(Some(prog))) { c =>
+            val gpRegs = c.io.gpRegs
+            val pc     = c.io.pc
+
+            pc.expect(0.U)
+            c.clock.step(1)
+            pc.expect(2.U)
+            c.clock.step(1)
+            pc.expect(4.U)
+            c.clock.step(1)
+            pc.expect(8.U) // j #test -> test: addi r3, r1, 4
+            c.clock.step(1)
+            pc.expect(10.U)
+            c.clock.step(1)
+            pc.expect(12.U)
+            c.clock.step(1)
+            pc.expect(14.U)
+            c.clock.step(1)
+            pc.expect(16.U)
+            c.clock.step(1)
+            pc.expect(8.U) // j #test -> test: addi r3, r1, 4
+            c.clock.step(1)
+            pc.expect(10.U)
         }
     }
 }
