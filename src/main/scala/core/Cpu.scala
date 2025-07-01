@@ -107,8 +107,8 @@ class Cpu extends Module {
 
     val pc = Module(new Register(START_ADDR.U(WORD_LEN.W)))
     pc.io.in    := pc.io.out
-    io.pc       := pc.io.out
     pc.io.write := false.B
+    io.pc       := pc.io.out
     // printf(cf"fetch:\n")
     // printf(cf"\tpc: 0x${pc.io.out}%x\n")
 
@@ -135,9 +135,9 @@ class Cpu extends Module {
 
     val allowStep = !io.debug_halt || (io.debug_halt && io.debug_step)
 
-    switch(cycles) {
-        is(0.U) {
-            when(allowStep) {
+    when(allowStep) {
+        switch(cycles) {
+            is(0.U) {
                 switch(op) {
                     is(Opcode.Add) {
                         alu.io.a         := gpRegs(rs1).out
@@ -402,9 +402,7 @@ class Cpu extends Module {
                     }
                 }
             }
-        }
-        is(1.U) {
-            when(allowStep) {
+            is(1.U) {
                 switch(op) {
                     is(Opcode.Lh) {
                         io.memDataAddr   := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
@@ -424,27 +422,32 @@ class Cpu extends Module {
                         // )
                     }
                 }
+
+                // reset cycles
                 cycles := 0.U
+
+                when(op === Opcode.Lh || op === Opcode.Sh) {
+                    pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U).asUInt
+                    pc.io.write := true.B
+                }
             }
         }
-    }
 
-    when(cycles === 0.U) {
-        when(allowStep) {
-            when(
-                !(op === Opcode.Lh || op === Opcode.Sh || op === Opcode.Jmp || op === Opcode.Jmpr || beqResult || bneResult || bltResult || bgeResult || bltuResult || bgeuResult)
-            ) {
-                pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U).asUInt
-                pc.io.write := true.B
-            }
-        }
-    }
-
-    when(cycles === 1.U) {
-        when(allowStep) {
+        when(
+            cycles === 0.U &&
+                !(op === Opcode.Jmp ||
+                    op === Opcode.Jmpr ||
+                    (op === Opcode.Beq && beqResult) ||
+                    (op === Opcode.Bne && bneResult) ||
+                    (op === Opcode.Blt && bltResult) ||
+                    (op === Opcode.Bge && bgeResult) ||
+                    (op === Opcode.Bltu && bltuResult) ||
+                    (op === Opcode.Bgeu && bgeuResult) ||
+                    op === Opcode.Lh ||
+                    op === Opcode.Sh)
+        ) {
             pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U).asUInt
             pc.io.write := true.B
         }
     }
-
 }
