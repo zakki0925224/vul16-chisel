@@ -26,8 +26,8 @@ class TestHarness(prog: Option[Seq[Int]] = None) extends Module {
     mem.io.instAddr    := core.io.pc
     core.io.memInst    := mem.io.instOut
 
-    core.io.debug_halt := false.B
-    core.io.debug_step := false.B
+    core.io.debugHalt := false.B
+    core.io.debugStep := false.B
 }
 
 class CpuTest extends AnyFlatSpec with ChiselScalatestTester {

@@ -18,8 +18,8 @@ class Core() extends Module {
         val memInst = Input(UInt(WORD_LEN.W))
 
         // debug
-        val debug_halt = Input(Bool())
-        val debug_step = Input(Bool())
+        val debugHalt = Input(Bool())
+        val debugStep = Input(Bool())
     })
 
     val cpu = Module(new Cpu())
@@ -36,6 +36,6 @@ class Core() extends Module {
     io.inst   := cpu.io.inst
     io.gpRegs := cpu.io.gpRegs
 
-    cpu.io.debug_halt := io.debug_halt
-    cpu.io.debug_step := io.debug_step
+    cpu.io.debugHalt := io.debugHalt
+    cpu.io.debugStep := io.debugStep
 }
