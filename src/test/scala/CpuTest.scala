@@ -164,12 +164,12 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
         val lb_r6_r5_0 = (0x13 << 11) | ((6 & 0x7) << 8) | ((5 & 0x7) << 5)
         // lbu r7, r5, 1       ; r7 = 0xf8 (zero-extended)
         val lbu_r7_r5_1 = (0x14 << 11) | ((7 & 0x7) << 8) | ((5 & 0x7) << 5) | 1
-        // lh r0, r5, 2        ; r0 = 0xff07 (0xff << 8 | 0x07)
-        val lh_r0_r5_2 = (0x15 << 11) | ((0 & 0x7) << 8) | ((5 & 0x7) << 5) | 2
-        // sh r1, r5, 4        ; mem[4] = 0x0f, mem[5] = 0x00
-        val sh_r1_r5_4 = (0x17 << 11) | ((1 & 0x7) << 8) | ((5 & 0x7) << 5) | 4
-        // lh r2, r5, 4        ; r2 = 0x000f
-        val lh_r2_r5_4 = (0x15 << 11) | ((2 & 0x7) << 8) | ((5 & 0x7) << 5) | 4
+        // lw r0, r5, 2        ; r0 = 0xff07 (0xff << 8 | 0x07)
+        val lw_r0_r5_2 = (0x15 << 11) | ((0 & 0x7) << 8) | ((5 & 0x7) << 5) | 2
+        // sw r1, r5, 4        ; mem[4] = 0x0f, mem[5] = 0x00
+        val sw_r1_r5_4 = (0x17 << 11) | ((1 & 0x7) << 8) | ((5 & 0x7) << 5) | 4
+        // lw r2, r5, 4        ; r2 = 0x000f
+        val lw_r2_r5_4 = (0x15 << 11) | ((2 & 0x7) << 8) | ((5 & 0x7) << 5) | 4
 
         val prog = Seq(
             addi_r1_r0_15,
@@ -183,9 +183,9 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             sb_r4_r5_3,
             lb_r6_r5_0,
             lbu_r7_r5_1,
-            lh_r0_r5_2,
-            sh_r1_r5_4,
-            lh_r2_r5_4
+            lw_r0_r5_2,
+            sw_r1_r5_4,
+            lw_r2_r5_4
         ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
 
         test(new TestHarness(Some(prog))) { c =>
@@ -221,12 +221,12 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             // lbu r7, r5, 1
             c.clock.step(5)
             gpRegs(7).expect(248.U) // 0xf8 (zero-extended)
-            // lh r0, r5, 2
+            // lw r0, r5, 2
             c.clock.step(5)
             gpRegs(0).expect(0.U) // r0 is zero
-            // sh r1, r5, 4
+            // sw r1, r5, 4
             c.clock.step(5)
-            // lh r2, r5, 4
+            // lw r2, r5, 4
             c.clock.step(5)
             gpRegs(2).expect(15.U) // 0x00 << 8 | 0x0f
         }

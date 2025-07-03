@@ -33,9 +33,9 @@ object Opcode extends ChiselEnum {
     val Sltiu   = Value(OP_SLTIU.U)
     val Lb      = Value(OP_LB.U)
     val Lbu     = Value(OP_LBU.U)
-    val Lh      = Value(OP_LH.U)
+    val Lw      = Value(OP_LW.U)
     val Sb      = Value(OP_SB.U)
-    val Sh      = Value(OP_SH.U)
+    val Sw      = Value(OP_SW.U)
     val Jmp     = Value(OP_JMP.U)
     val Jmpr    = Value(OP_JMPR.U)
     val Beq     = Value(OP_BEQ.U)
@@ -72,9 +72,9 @@ object Opcode extends ChiselEnum {
             is(OP_SLTIU.U(5.W)) { decoded := Sltiu }
             is(OP_LB.U(5.W)) { decoded := Lb }
             is(OP_LBU.U(5.W)) { decoded := Lbu }
-            is(OP_LH.U(5.W)) { decoded := Lh }
+            is(OP_LW.U(5.W)) { decoded := Lw }
             is(OP_SB.U(5.W)) { decoded := Sb }
-            is(OP_SH.U(5.W)) { decoded := Sh }
+            is(OP_SW.U(5.W)) { decoded := Sw }
             is(OP_JMP.U(5.W)) { decoded := Jmp }
             is(OP_JMPR.U(5.W)) { decoded := Jmpr }
             is(OP_BEQ.U(5.W)) { decoded := Beq }
@@ -113,9 +113,9 @@ object Opcode extends ChiselEnum {
             is(Sltiu) { fmt := FormatType.I }
             is(Lb) { fmt := FormatType.I }
             is(Lbu) { fmt := FormatType.I }
-            is(Lh) { fmt := FormatType.I }
+            is(Lw) { fmt := FormatType.I }
             is(Sb) { fmt := FormatType.I }
-            is(Sh) { fmt := FormatType.I }
+            is(Sw) { fmt := FormatType.I }
             is(Jmpr) { fmt := FormatType.I }
             is(Jmp) { fmt := FormatType.J }
             is(Beq) { fmt := FormatType.B }

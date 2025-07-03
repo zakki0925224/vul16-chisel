@@ -66,9 +66,9 @@ Vulcan-16 - 16bit CPU
 | SLTIU       | I    | 0x12   | sltiu rd, rs, imm       | r[rd] = (r[rs] < imm) ? 1 : 0                                       |
 | LB          | I    | 0x13   | lb rd, rs, **offset**   | r[rd] = m[r[rs] + offset.i].i                                       |
 | LBU         | I    | 0x14   | lbu rd, rs, **offset**  | r[rd] = m[r[rs] + offset.i]                                         |
-| LH          | I    | 0x15   | lh rd, rs, **offset**   | r[rd] = (m[r[rs] + offset.i + 1] << 8) \| m[r[rs] + offset.i].i     |
+| LW          | I    | 0x15   | lw rd, rs, **offset**   | r[rd] = (m[r[rs] + offset.i + 1] << 8) \| m[r[rs] + offset.i].i     |
 | SB          | I    | 0x16   | sb rd, rs, **offset**   | m[r[rs] + offset.i] = r[rd]                                         |
-| SH          | I    | 0x17   | sh rd, rs, **offset**   | m[r[rs] + offset.i] = r[rd], m[r[rs] + offset.i + 1] = (r[rd] >> 8) |
+| SW          | I    | 0x17   | sw rd, rs, **offset**   | m[r[rs] + offset.i] = r[rd], m[r[rs] + offset.i + 1] = (r[rd] >> 8) |
 | JMP         | J    | 0x18   | jmp rd, offset          | r[rd] = pc + 2, pc += offset.i                                      |
 | JMPR        | I    | 0x19   | jmpr rd, rs, **offset** | t = pc + 2, pc = (r[rs] + offset.i) & ~1, r[rd] = t                 |
 | BEQ         | B    | 0x1a   | beq rs1, rs2, offset    | if(r[rs1] == r[rs2]) pc += offset.i                                 |

@@ -30,9 +30,9 @@ object Consts {
     val OP_SLTIU = 0x12
     val OP_LB    = 0x13
     val OP_LBU   = 0x14
-    val OP_LH    = 0x15
+    val OP_LW    = 0x15
     val OP_SB    = 0x16
-    val OP_SH    = 0x17
+    val OP_SW    = 0x17
     val OP_JMP   = 0x18
     val OP_JMPR  = 0x19
     val OP_BEQ   = 0x1a
