@@ -97,9 +97,12 @@ class Cpu extends Module {
         val debugStep = Input(Bool())
     })
 
-    io.memDataAddr  := 0.U(WORD_LEN.W)
-    io.memDataIn    := 0.U(BYTE_LEN.W)
-    io.memDataWrite := false.B
+    val memDataAddrReg  = RegInit(0.U(WORD_LEN.W))
+    val memDataInReg    = RegInit(0.U(BYTE_LEN.W))
+    val memDataWriteReg = RegInit(false.B)
+    io.memDataAddr  := memDataAddrReg
+    io.memDataIn    := memDataInReg
+    io.memDataWrite := memDataWriteReg
 
     // general purpose registers
     val gpRegs = VecInit(Seq.fill(NUM_GP_REGS)(Module(new Register()).io))
@@ -351,27 +354,27 @@ class Cpu extends Module {
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Lb) {
-                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-                    io.memDataWrite := false.B
+                    memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    memDataWriteReg := false.B
                     memDataReq      := true.B
                 }.elsewhen(op === Opcode.Lbu) {
-                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-                    io.memDataWrite := false.B
+                    memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    memDataWriteReg := false.B
                     memDataReq      := true.B
                 }.elsewhen(op === Opcode.Lh) {
-                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-                    io.memDataWrite := false.B
+                    memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    memDataWriteReg := false.B
                     memDataReq      := true.B
                     lshState        := lshSPendingHighValue
                 }.elsewhen(op === Opcode.Sb) {
-                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-                    io.memDataIn    := gpRegs(rd).out(7, 0)
-                    io.memDataWrite := true.B
+                    memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    memDataInReg    := gpRegs(rd).out(7, 0)
+                    memDataWriteReg := true.B
                     memDataReq      := true.B
                 }.elsewhen(op === Opcode.Sh) {
-                    io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
-                    io.memDataIn    := gpRegs(rd).out(15, 8)
-                    io.memDataWrite := true.B
+                    memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
+                    memDataInReg    := gpRegs(rd).out(15, 8)
+                    memDataWriteReg := true.B
                     memDataReq      := true.B
                     lshState        := lshSPendingHighValue
                 }
@@ -467,7 +470,10 @@ class Cpu extends Module {
             }
             is(sExec2) {
                 when(io.memDataDone) {
-                    memDataReq := false.B
+                    memDataReq      := false.B
+                    memDataWriteReg := false.B
+                    memDataAddrReg  := 0.U
+                    memDataInReg    := 0.U
                     when(op === Opcode.Lb) {
                         gpRegs(rd).in    := signExtend(io.memDataOut, BYTE_LEN, WORD_LEN)
                         gpRegs(rd).write := true.B
@@ -482,8 +488,8 @@ class Cpu extends Module {
                         state            := sFetch
                     }.elsewhen(op === Opcode.Lh && lshState === lshSPendingHighValue) {
                         dataBuf         := io.memDataOut
-                        io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
-                        io.memDataWrite := false.B
+                        memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
+                        memDataWriteReg := false.B
                         memDataReq      := true.B
                         lshState        := lshSPendingLowValue
                     }.elsewhen(op === Opcode.Lh && lshState === lshSPendingLowValue) {
@@ -499,9 +505,9 @@ class Cpu extends Module {
                         pc.io.write := true.B
                         state       := sFetch
                     }.elsewhen(op === Opcode.Sh && lshState === lshSPendingHighValue) {
-                        io.memDataAddr  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-                        io.memDataIn    := gpRegs(rd).out(7, 0)
-                        io.memDataWrite := true.B
+                        memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                        memDataInReg    := gpRegs(rd).out(7, 0)
+                        memDataWriteReg := true.B
                         memDataReq      := true.B
                         lshState        := lshSPendingLowValue
                     }.elsewhen(op === Opcode.Sh && lshState === lshSPendingLowValue) {
