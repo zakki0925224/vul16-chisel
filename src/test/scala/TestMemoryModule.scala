@@ -15,7 +15,7 @@ class TestMemoryModule(memInit: Option[Seq[Int]] = None) extends Module {
         val instOut  = Output(UInt(WORD_LEN.W))
     })
 
-    val mem = Mem(MEM_SIZE, UInt(8.W))
+    val mem = SyncReadMem(MEM_SIZE, UInt(8.W))
     when(reset.asBool) {
         memInit.foreach { init =>
             for ((v, i) <- init.zipWithIndex) {

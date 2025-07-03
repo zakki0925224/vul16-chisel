@@ -166,6 +166,7 @@ class Cpu extends Module {
                     rs2   := dRs2
                     imm   := dImm
                     state := sExec
+                    // printf(p"pc=${pc.io.out}, op=$op, rd=$rd, rs1=$rs1, rs2=$rs2, imm=$imm\n")
                 }
             }
             is(sExec) {
@@ -468,13 +469,13 @@ class Cpu extends Module {
                 when(io.memDataDone) {
                     memDataReq := false.B
                     when(op === Opcode.Lb) {
-                        gpRegs(rd).in    := io.memDataOut.asSInt.asUInt
+                        gpRegs(rd).in    := signExtend(io.memDataOut, BYTE_LEN, WORD_LEN)
                         gpRegs(rd).write := true.B
                         pc.io.in         := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                         pc.io.write      := true.B
                         state            := sFetch
                     }.elsewhen(op === Opcode.Lbu) {
-                        gpRegs(rd).in    := Cat(0.U(8.W), io.memDataOut)
+                        gpRegs(rd).in    := io.memDataOut
                         gpRegs(rd).write := true.B
                         pc.io.in         := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                         pc.io.write      := true.B
