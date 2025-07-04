@@ -347,7 +347,7 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
         }
     }
 
-    it should "assembler test" in {
+    it should "assembler test - label" in {
         val res = getClass.getResource("/asm_tests/label.bin")
         require(res != null, "label.bin not found in resources")
 
@@ -377,6 +377,29 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             pc.expect(8.U) // j #test -> test: addi r3, r1, 4
             c.clock.step(3)
             pc.expect(10.U)
+        }
+    }
+
+    it should "assembler test - ret" in {
+        val res = getClass.getResource("/asm_tests/ret.bin")
+        require(res != null, "ret.bin not found in resources")
+
+        val path           = Paths.get(res.toURI())
+        val prog: Seq[Int] = Files.readAllBytes(path).map(_ & 0xff).toSeq
+
+        test(new TestHarness(Some(prog))) { c =>
+            val gpRegs = c.io.gpRegs
+            val pc     = c.io.pc
+
+            pc.expect(0.U)
+            c.clock.step(3)
+            gpRegs(1).expect(2.U)
+            pc.expect(10.U) // j #main -> main: addi r0, r0, 1
+            c.clock.step(3)
+            c.clock.step(3)
+            c.clock.step(3)
+            c.clock.step(3)
+            pc.expect(2.U) // ret -> <ROOT>: addi r0, r0, 0
         }
     }
 }
