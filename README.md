@@ -6,18 +6,34 @@ Vulcan-16 - 16bit CPU implemented in Chisel HDL
 
 ### Core Components
 
--   **General Purpose Registers**
+-   **General Purpose Registers**: 8 registers (R0-R7)
+    -   R0: Zero register (always 0x0000)
+    -   R1-R7: General purpose registers (16-bit each)
+-   **Program Counter (PC)**: 16-bit register for instruction address
+-   **Arithmetic Logic Unit (ALU)**: Supports arithmetic, logical, and comparison operations
+-   **Memory Interface**: Byte-addressable memory with separate instruction and data access
 
-#### Branch Instructions
+### CPU Pipeline
 
-| Instruction | Type | Opcode | Format                | Implementation                           |
-| ----------- | ---- | ------ | --------------------- | ---------------------------------------- |
-| BEQ         | B    | 0x1a   | beq rs1, rs2, offset  | if(r[rs1] == r[rs2]) pc += offset.i      |
-| BNE         | B    | 0x1b   | bne rs1, rs2, offset  | if(r[rs1] != r[rs2]) pc += offset.i      |
-| BLT         | B    | 0x1c   | blt rs1, rs2, offset  | if(r[rs1].i < rs[rs2].i) pc += offset.i  |
-| BGE         | B    | 0x1d   | bge rs1, rs2, offset  | if(r[rs1].i >= rs[rs2].i) pc += offset.i |
-| BLTU        | B    | 0x1e   | bltu rs1, rs2, offset | if(r[rs1] < rs[rs2]) pc += offset.i      |
-| BGEU        | B    | 0x1f   | bgeu rs1, rs2, offset | if(r[rs1] >= rs[rs2]) pc += offset.i     |
+The CPU implements a 4-stage state machine:
+
+1. **Fetch**: Request instruction from memory
+2. **Decode**: Decode instruction and extract operands
+3. **Execute**: Perform operation using ALU or memory access
+4. **Execute2**: Handle multi-cycle operations (load/store word)
+
+### Memory Architecture
+
+-   **Word Size**: 16 bits
+-   **Byte Size**: 8 bits
+-   **Address Space**: 16-bit addressing (64KB)
+-   **Memory Interface**: Separate instruction and data memory access with handshake protocol
+-   **Endianness**: Little-endian for word operations
+
+### Debug Features
+
+-   **Halt Mode**: Pause CPU execution
+-   **Step Mode**: Execute single instruction when halted
 
 ## Implementation Details
 
@@ -47,34 +63,7 @@ The CPU uses a handshake protocol for memory access:
 -   **Request/Done signals**: `memInstReq`/`memInstDone` for instruction fetch
 -   **Request/Done signals**: `memDataReq`/`memDataDone` for data access
 -   **Address/Data buses**: Separate for instruction and data memory
--   **Write enable**: For store operation registers (R0-R7)
-    -   R0: Zero register (always 0x0000)
-    -   R1-R7: General purpose registers (16-bit each)
--   **Program Counter (PC)**: 16-bit register for instruction address
--   **Arithmetic Logic Unit (ALU)**: Supports arithmetic, logical, and comparison operations
--   **Memory Interface**: Byte-addressable memory with separate instruction and data access
-
-### CPU Pipeline
-
-The CPU implements a 4-stage state machine:
-
-1. **Fetch**: Request instruction from memory
-2. **Decode**: Decode instruction and extract operands
-3. **Execute**: Perform operation using ALU or memory access
-4. **Execute2**: Handle multi-cycle operations (load/store word)
-
-### Memory Architecture
-
--   **Word Size**: 16 bits
--   **Byte Size**: 8 bits
--   **Address Space**: 16-bit addressing (64KB)
--   **Memory Interface**: Separate instruction and data memory access with handshake protocol
--   **Endianness**: Little-endian for word operations
-
-### Debug Features
-
--   **Halt Mode**: Pause CPU execution
--   **Step Mode**: Execute single instruction when halted
+-   **Write enable**: For store operations
 
 ## ISA (Instruction Set Architecture)
 
@@ -165,7 +154,7 @@ The CPU implements a 4-stage state machine:
 | LBU         | I    | 0x14   | lbu rd, rs, offset | r[rd] = m[r[rs] + offset.i] (zero-extended byte)                        |
 | LW          | I    | 0x15   | lw rd, rs, offset  | r[rd] = (m[r[rs] + offset.i + 1] << 8) \| m[r[rs] + offset.i]           |
 | SB          | I    | 0x16   | sb rd, rs, offset  | m[r[rs] + offset.i] = r[rd][7:0]                                        |
-| SW          | I    | 0x17   | sw rd, rs, offset  | m[r[rs] + offset.i] = r[rd][7:0], m[r[rs] + offset.i + 1] = r[rd][15:8] |
+| SW          | I    | 0x17   | sw rd, rs, offset  | m[r[rs] + offset.i + 1] = r[rd][15:8], m[r[rs] + offset.i] = r[rd][7:0] |
 
 #### Jump Instructions
 
@@ -176,13 +165,14 @@ The CPU implements a 4-stage state machine:
 
 #### Branch Instructions
 
-| BEQ  | B   | 0x1a | beq rs1, rs2, offset  | if(r[rs1] == r[rs2]) pc += offset.i     |
-| ---- | --- | ---- | --------------------- | --------------------------------------- |
-| BNE  | B   | 0x1b | bne rs1, rs2, offset  | if(r[rs1] != r[rs2]) pc += offset.i     |
-| BLT  | B   | 0x1c | blt rs1, rs2, offset  | if(r[rs1].i < r[rs2].i) pc += offset.i  |
-| BGE  | B   | 0x1d | bge rs1, rs2, offset  | if(r[rs1].i >= r[rs2].i) pc += offset.i |
-| BLTU | B   | 0x1e | bltu rs1, rs2, offset | if(r[rs1] < r[rs2]) pc += offset.i      |
-| BGEU | B   | 0x1f | bgeu rs1, rs2, offset | if(r[rs1] >= r[rs2]) pc += offset.i     |
+| Instruction | Type | Opcode | Format                | Implementation                          |
+| ----------- | ---- | ------ | --------------------- | --------------------------------------- |
+| BEQ         | B    | 0x1a   | beq rs1, rs2, offset  | if(r[rs1] == r[rs2]) pc += offset.i     |
+| BNE         | B    | 0x1b   | bne rs1, rs2, offset  | if(r[rs1] != r[rs2]) pc += offset.i     |
+| BLT         | B    | 0x1c   | blt rs1, rs2, offset  | if(r[rs1].i < r[rs2].i) pc += offset.i  |
+| BGE         | B    | 0x1d   | bge rs1, rs2, offset  | if(r[rs1].i >= r[rs2].i) pc += offset.i |
+| BLTU        | B    | 0x1e   | bltu rs1, rs2, offset | if(r[rs1] < r[rs2]) pc += offset.i      |
+| BGEU        | B    | 0x1f   | bgeu rs1, rs2, offset | if(r[rs1] >= rs[rs2]) pc += offset.i    |
 
 ## Other tools
 
@@ -217,7 +207,7 @@ The generated Verilog files will be placed in the `output/` directory:
 
 ### Testing
 
-The project includes comprehensive tests:c
+The project includes comprehensive tests:
 
 -   **Unit tests**: ALU operations, register functionality
 -   **Integration tests**: Full CPU instruction execution
