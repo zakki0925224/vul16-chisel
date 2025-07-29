@@ -353,6 +353,16 @@ class Cpu extends Module {
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
+                }.elsewhen(op === Opcode.Sltiu) {
+                    alu.io.a  := gpRegs(rs1).out
+                    alu.io.b  := imm
+                    alu.io.op := AluOpcode.Sltu
+
+                    gpRegs(rd).in    := alu.io.out
+                    gpRegs(rd).write := true.B
+
+                    pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
+                    pc.io.write := true.B
                 }.elsewhen(op === Opcode.Lb) {
                     memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
                     memDataWriteReg := false.B
