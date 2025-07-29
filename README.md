@@ -120,8 +120,6 @@ The CPU implements a 4-stage state machine:
 
 #### Arithmetic Instructions
 
-#### Arithmetic Instructions
-
 | Instruction | Type | Opcode | Format           | Implementation              |
 | ----------- | ---- | ------ | ---------------- | --------------------------- |
 | ADD         | R    | 0x00   | add rd, rs1, rs2 | r[rd] = r[rs1].i + r[rs2].i |
