@@ -387,84 +387,75 @@ class Cpu extends Module {
                     memDataWriteReg := true.B
                     memDataReq      := true.B
                     lswState        := lswSPendingHighValue
-                }
+                }.elsewhen(op === Opcode.Jmp) {
+                    // regs
+                    gpRegs(rd).in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
+                    gpRegs(rd).write := true.B
+
                     // pc
-                    .elsewhen(op === Opcode.Jmp) {
-                        // regs
-                        gpRegs(rd).in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                        gpRegs(rd).write := true.B
+                    pc.io.in    := (pc.io.out.asSInt + imm.asSInt).asUInt
+                    pc.io.write := true.B
+                }.elsewhen(op === Opcode.Jmpr) {
+                    val t = pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
+                    gpRegs(rd).in    := t
+                    gpRegs(rd).write := true.B
+                    val newPC = (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt & ~1.U(WORD_LEN.W)
+                    pc.io.in    := newPC
+                    pc.io.write := true.B
+                }.elsewhen(op === Opcode.Beq) {
+                    // pc
+                    when(gpRegs(rs1).out === gpRegs(rs2).out) {
+                        pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
+                    }.otherwise {
+                        pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
+                    }
 
-                        // pc
-                        pc.io.in    := (pc.io.out.asSInt + imm.asSInt).asUInt
-                        pc.io.write := true.B
+                    pc.io.write := true.B
+                }.elsewhen(op === Opcode.Bne) {
+                    // pc
+                    when(gpRegs(rs1).out =/= gpRegs(rs2).out) {
+                        pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
+                    }.otherwise {
+                        pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     }
-                    .elsewhen(op === Opcode.Jmpr) {
-                        val t = pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                        gpRegs(rd).in    := t
-                        gpRegs(rd).write := true.B
-                        val newPC = (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt & ~1.U(WORD_LEN.W)
-                        pc.io.in    := newPC
-                        pc.io.write := true.B
-                    }
-                    .elsewhen(op === Opcode.Beq) {
-                        // pc
-                        when(gpRegs(rs1).out === gpRegs(rs2).out) {
-                            pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
-                        }.otherwise {
-                            pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                        }
 
-                        pc.io.write := true.B
+                    pc.io.write := true.B
+                }.elsewhen(op === Opcode.Blt) {
+                    // pc
+                    when(gpRegs(rs1).out.asSInt < gpRegs(rs2).out.asSInt) {
+                        pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
+                    }.otherwise {
+                        pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     }
-                    .elsewhen(op === Opcode.Bne) {
-                        // pc
-                        when(gpRegs(rs1).out =/= gpRegs(rs2).out) {
-                            pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
-                        }.otherwise {
-                            pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                        }
 
-                        pc.io.write := true.B
+                    pc.io.write := true.B
+                }.elsewhen(op === Opcode.Bge) {
+                    // pc
+                    when(gpRegs(rs1).out.asSInt >= gpRegs(rs2).out.asSInt) {
+                        pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
+                    }.otherwise {
+                        pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     }
-                    .elsewhen(op === Opcode.Blt) {
-                        // pc
-                        when(gpRegs(rs1).out.asSInt < gpRegs(rs2).out.asSInt) {
-                            pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
-                        }.otherwise {
-                            pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                        }
 
-                        pc.io.write := true.B
+                    pc.io.write := true.B
+                }.elsewhen(op === Opcode.Bltu) {
+                    // pc
+                    when(gpRegs(rs1).out < gpRegs(rs2).out) {
+                        pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
+                    }.otherwise {
+                        pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     }
-                    .elsewhen(op === Opcode.Bge) {
-                        // pc
-                        when(gpRegs(rs1).out.asSInt >= gpRegs(rs2).out.asSInt) {
-                            pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
-                        }.otherwise {
-                            pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                        }
 
-                        pc.io.write := true.B
+                    pc.io.write := true.B
+                }.elsewhen(op === Opcode.Bgeu) {
+                    // pc
+                    when(gpRegs(rs1).out >= gpRegs(rs2).out) {
+                        pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
+                    }.otherwise {
+                        pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     }
-                    .elsewhen(op === Opcode.Bltu) {
-                        // pc
-                        when(gpRegs(rs1).out < gpRegs(rs2).out) {
-                            pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
-                        }.otherwise {
-                            pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                        }
-
-                        pc.io.write := true.B
-                    }
-                    .elsewhen(op === Opcode.Bgeu) {
-                        // pc
-                        when(gpRegs(rs1).out >= gpRegs(rs2).out) {
-                            pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
-                        }.otherwise {
-                            pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                        }
-                        pc.io.write := true.B
-                    }
+                    pc.io.write := true.B
+                }
 
                 // state
                 when(
