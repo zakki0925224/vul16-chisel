@@ -138,9 +138,8 @@ class Cpu extends Module {
     val sFetch :: sDecode :: sExec :: sExec2 :: Nil = Enum(4)
     val state                                       = RegInit(sFetch)
 
-    // load / store word instructions state
-    val lswSFetch :: lswSPendingHighValue :: lswSPendingLowValue :: Nil = Enum(3)
-    val lswState                                                        = RegInit(lswSFetch)
+    val lswSFetch :: lswSFirstByte :: lswSSecondByte :: Nil = Enum(3)
+    val lswState                                            = RegInit(lswSFetch)
 
     val op  = RegInit(Opcode.Add)
     val rd  = RegInit(0.U(3.W))
@@ -375,18 +374,18 @@ class Cpu extends Module {
                     memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
                     memDataWriteReg := false.B
                     memDataReq      := true.B
-                    lswState        := lswSPendingHighValue
+                    lswState        := lswSFirstByte
                 }.elsewhen(op === Opcode.Sb) {
                     memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
                     memDataInReg    := gpRegs(rd).out(7, 0)
                     memDataWriteReg := true.B
                     memDataReq      := true.B
                 }.elsewhen(op === Opcode.Sw) {
-                    memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
-                    memDataInReg    := gpRegs(rd).out(15, 8)
+                    memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    memDataInReg    := gpRegs(rd).out(7, 0)
                     memDataWriteReg := true.B
                     memDataReq      := true.B
-                    lswState        := lswSPendingHighValue
+                    lswState        := lswSFirstByte
                 }.elsewhen(op === Opcode.Jmp) {
                     // regs
                     gpRegs(rd).in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
@@ -488,13 +487,13 @@ class Cpu extends Module {
                         pc.io.in         := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                         pc.io.write      := true.B
                         state            := sFetch
-                    }.elsewhen(op === Opcode.Lw && lswState === lswSPendingHighValue) {
+                    }.elsewhen(op === Opcode.Lw && lswState === lswSFirstByte) {
                         dataBuf         := io.memDataOut
                         memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
                         memDataWriteReg := false.B
                         memDataReq      := true.B
-                        lswState        := lswSPendingLowValue
-                    }.elsewhen(op === Opcode.Lw && lswState === lswSPendingLowValue) {
+                        lswState        := lswSSecondByte
+                    }.elsewhen(op === Opcode.Lw && lswState === lswSSecondByte) {
                         val result = Cat(io.memDataOut, dataBuf)
                         gpRegs(rd).in    := result
                         gpRegs(rd).write := true.B
@@ -506,13 +505,13 @@ class Cpu extends Module {
                         pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                         pc.io.write := true.B
                         state       := sFetch
-                    }.elsewhen(op === Opcode.Sw && lswState === lswSPendingHighValue) {
-                        memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-                        memDataInReg    := gpRegs(rd).out(7, 0)
+                    }.elsewhen(op === Opcode.Sw && lswState === lswSFirstByte) {
+                        memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
+                        memDataInReg    := gpRegs(rd).out(15, 8)
                         memDataWriteReg := true.B
                         memDataReq      := true.B
-                        lswState        := lswSPendingLowValue
-                    }.elsewhen(op === Opcode.Sw && lswState === lswSPendingLowValue) {
+                        lswState        := lswSSecondByte
+                    }.elsewhen(op === Opcode.Sw && lswState === lswSSecondByte) {
                         pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                         pc.io.write := true.B
                         lswState    := lswSFetch
