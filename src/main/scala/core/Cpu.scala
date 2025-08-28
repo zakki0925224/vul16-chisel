@@ -105,18 +105,35 @@ class Cpu extends Module {
     io.memDataWrite := memDataWriteReg
 
     // general purpose registers
-    val gpRegs = VecInit(Seq.fill(NUM_GP_REGS)(Module(new Register()).io))
-    for (i <- 0 until NUM_GP_REGS) {
-        // zero register
-        if (i == 0) {
-            gpRegs(0).in    := 0.U(WORD_LEN.W)
-            gpRegs(0).write := false.B
-            io.gpRegs(0)    := 0.U(WORD_LEN.W)
-        } else {
-            gpRegs(i).in    := gpRegs(i).out
-            gpRegs(i).write := false.B
-            io.gpRegs(i)    := gpRegs(i).out
+    val gpRegs = VecInit(Seq.fill(NUM_GP_REGS - 1)(Module(new Register()).io))
+    for (i <- 0 until (NUM_GP_REGS - 1)) {
+        gpRegs(i).in    := gpRegs(i).out
+        gpRegs(i).write := false.B
+    }
+
+    def readGpReg(reg: UInt): UInt = {
+        val dataVec = Wire(Vec(NUM_GP_REGS, UInt(WORD_LEN.W)))
+        dataVec(0) := 0.U
+        for (i <- 1 until NUM_GP_REGS) {
+            dataVec(i) := gpRegs(i - 1).out
         }
+        dataVec(reg)
+    }
+
+    def writeGpReg(reg: UInt, value: UInt): Unit = {
+        when(reg =/= 0.U) {
+            for (i <- 1 until NUM_GP_REGS) {
+                when(reg === i.U) {
+                    gpRegs(i - 1).in    := value
+                    gpRegs(i - 1).write := true.B
+                }
+            }
+        }
+    }
+
+    io.gpRegs(0) := 0.U
+    for (i <- 1 until NUM_GP_REGS) {
+        io.gpRegs(i) := gpRegs(i - 1).out
     }
 
     val pc = Module(new Register(START_ADDR.U(WORD_LEN.W)))
@@ -173,237 +190,197 @@ class Cpu extends Module {
             }
             is(sExec) {
                 when(op === Opcode.Add) {
-                    alu.io.a  := gpRegs(rs1).out
-                    alu.io.b  := gpRegs(rs2).out
+                    alu.io.a  := readGpReg(rs1)
+                    alu.io.b  := readGpReg(rs2)
                     alu.io.op := AluOpcode.Add
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Addi) {
-                    alu.io.a  := gpRegs(rs1).out
+                    alu.io.a  := readGpReg(rs1)
                     alu.io.b  := imm
                     alu.io.op := AluOpcode.Add
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Sub) {
-                    alu.io.a  := gpRegs(rs1).out
-                    alu.io.b  := gpRegs(rs2).out
+                    alu.io.a  := readGpReg(rs1)
+                    alu.io.b  := readGpReg(rs2)
                     alu.io.op := AluOpcode.Sub
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.And) {
-                    alu.io.a  := gpRegs(rs1).out
-                    alu.io.b  := gpRegs(rs2).out
+                    alu.io.a  := readGpReg(rs1)
+                    alu.io.b  := readGpReg(rs2)
                     alu.io.op := AluOpcode.And
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Andi) {
-                    alu.io.a  := gpRegs(rs1).out
+                    alu.io.a  := readGpReg(rs1)
                     alu.io.b  := imm
                     alu.io.op := AluOpcode.And
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Or) {
-                    alu.io.a  := gpRegs(rs1).out
-                    alu.io.b  := gpRegs(rs2).out
+                    alu.io.a  := readGpReg(rs1)
+                    alu.io.b  := readGpReg(rs2)
                     alu.io.op := AluOpcode.Or
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Ori) {
-                    alu.io.a  := gpRegs(rs1).out
+                    alu.io.a  := readGpReg(rs1)
                     alu.io.b  := imm
                     alu.io.op := AluOpcode.Or
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Xor) {
-                    alu.io.a  := gpRegs(rs1).out
-                    alu.io.b  := gpRegs(rs2).out
+                    alu.io.a  := readGpReg(rs1)
+                    alu.io.b  := readGpReg(rs2)
                     alu.io.op := AluOpcode.Xor
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Xori) {
-                    alu.io.a  := gpRegs(rs1).out
+                    alu.io.a  := readGpReg(rs1)
                     alu.io.b  := imm
                     alu.io.op := AluOpcode.Xor
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Sll) {
-                    alu.io.a  := gpRegs(rs1).out
-                    alu.io.b  := gpRegs(rs2).out
+                    alu.io.a  := readGpReg(rs1)
+                    alu.io.b  := readGpReg(rs2)
                     alu.io.op := AluOpcode.Sll
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Slli) {
-                    alu.io.a  := gpRegs(rs1).out
+                    alu.io.a  := readGpReg(rs1)
                     alu.io.b  := imm
                     alu.io.op := AluOpcode.Sll
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Srl) {
-                    alu.io.a  := gpRegs(rs1).out
-                    alu.io.b  := gpRegs(rs2).out
+                    alu.io.a  := readGpReg(rs1)
+                    alu.io.b  := readGpReg(rs2)
                     alu.io.op := AluOpcode.Srl
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Srli) {
-                    alu.io.a  := gpRegs(rs1).out
+                    alu.io.a  := readGpReg(rs1)
                     alu.io.b  := imm
                     alu.io.op := AluOpcode.Srl
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Sra) {
-                    alu.io.a  := gpRegs(rs1).out
-                    alu.io.b  := gpRegs(rs2).out
+                    alu.io.a  := readGpReg(rs1)
+                    alu.io.b  := readGpReg(rs2)
                     alu.io.op := AluOpcode.Sra
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Srai) {
-                    alu.io.a  := gpRegs(rs1).out
+                    alu.io.a  := readGpReg(rs1)
                     alu.io.b  := imm
                     alu.io.op := AluOpcode.Sra
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Slt) {
-                    alu.io.a  := gpRegs(rs1).out
-                    alu.io.b  := gpRegs(rs2).out
+                    alu.io.a  := readGpReg(rs1)
+                    alu.io.b  := readGpReg(rs2)
                     alu.io.op := AluOpcode.Slt
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Slti) {
-                    alu.io.a  := gpRegs(rs1).out
+                    alu.io.a  := readGpReg(rs1)
                     alu.io.b  := imm
                     alu.io.op := AluOpcode.Slt
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Sltu) {
-                    alu.io.a  := gpRegs(rs1).out
-                    alu.io.b  := gpRegs(rs2).out
+                    alu.io.a  := readGpReg(rs1)
+                    alu.io.b  := readGpReg(rs2)
                     alu.io.op := AluOpcode.Sltu
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Sltiu) {
-                    alu.io.a  := gpRegs(rs1).out
+                    alu.io.a  := readGpReg(rs1)
                     alu.io.b  := imm
                     alu.io.op := AluOpcode.Sltu
-
-                    gpRegs(rd).in    := alu.io.out
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, alu.io.out)
 
                     pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Lb) {
-                    memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    memDataAddrReg  := (readGpReg(rs1).asSInt + imm.asSInt).asUInt
                     memDataWriteReg := false.B
                     memDataReq      := true.B
                 }.elsewhen(op === Opcode.Lbu) {
-                    memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    memDataAddrReg  := (readGpReg(rs1).asSInt + imm.asSInt).asUInt
                     memDataWriteReg := false.B
                     memDataReq      := true.B
                 }.elsewhen(op === Opcode.Lw) {
-                    memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
+                    memDataAddrReg  := (readGpReg(rs1).asSInt + imm.asSInt).asUInt
                     memDataWriteReg := false.B
                     memDataReq      := true.B
                     lswState        := lswSFirstByte
                 }.elsewhen(op === Opcode.Sb) {
-                    memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-                    memDataInReg    := gpRegs(rd).out(7, 0)
+                    memDataAddrReg  := (readGpReg(rs1).asSInt + imm.asSInt).asUInt
+                    memDataInReg    := readGpReg(rd)(7, 0)
                     memDataWriteReg := true.B
                     memDataReq      := true.B
                 }.elsewhen(op === Opcode.Sw) {
-                    memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt
-                    memDataInReg    := gpRegs(rd).out(7, 0)
+                    memDataAddrReg  := (readGpReg(rs1).asSInt + imm.asSInt).asUInt
+                    memDataInReg    := readGpReg(rd)(7, 0)
                     memDataWriteReg := true.B
                     memDataReq      := true.B
                     lswState        := lswSFirstByte
                 }.elsewhen(op === Opcode.Jmp) {
                     // regs
-                    gpRegs(rd).in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                    gpRegs(rd).write := true.B
+                    writeGpReg(rd, pc.io.out + (WORD_LEN.U / BYTE_LEN.U))
 
                     // pc
                     pc.io.in    := (pc.io.out.asSInt + imm.asSInt).asUInt
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Jmpr) {
                     val t = pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                    gpRegs(rd).in    := t
-                    gpRegs(rd).write := true.B
-                    val newPC = (gpRegs(rs1).out.asSInt + imm.asSInt).asUInt & ~1.U(WORD_LEN.W)
+                    writeGpReg(rd, t)
+                    val newPC = (readGpReg(rs1).asSInt + imm.asSInt).asUInt & ~1.U(WORD_LEN.W)
                     pc.io.in    := newPC
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Beq) {
                     // pc
-                    when(gpRegs(rs1).out === gpRegs(rs2).out) {
+                    when(readGpReg(rs1) === readGpReg(rs2)) {
                         pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
                     }.otherwise {
                         pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
@@ -412,7 +389,7 @@ class Cpu extends Module {
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Bne) {
                     // pc
-                    when(gpRegs(rs1).out =/= gpRegs(rs2).out) {
+                    when(readGpReg(rs1) =/= readGpReg(rs2)) {
                         pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
                     }.otherwise {
                         pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
@@ -421,7 +398,7 @@ class Cpu extends Module {
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Blt) {
                     // pc
-                    when(gpRegs(rs1).out.asSInt < gpRegs(rs2).out.asSInt) {
+                    when(readGpReg(rs1).asSInt < readGpReg(rs2).asSInt) {
                         pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
                     }.otherwise {
                         pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
@@ -430,7 +407,7 @@ class Cpu extends Module {
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Bge) {
                     // pc
-                    when(gpRegs(rs1).out.asSInt >= gpRegs(rs2).out.asSInt) {
+                    when(readGpReg(rs1).asSInt >= readGpReg(rs2).asSInt) {
                         pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
                     }.otherwise {
                         pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
@@ -439,7 +416,7 @@ class Cpu extends Module {
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Bltu) {
                     // pc
-                    when(gpRegs(rs1).out < gpRegs(rs2).out) {
+                    when(readGpReg(rs1) < readGpReg(rs2)) {
                         pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
                     }.otherwise {
                         pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
@@ -448,7 +425,7 @@ class Cpu extends Module {
                     pc.io.write := true.B
                 }.elsewhen(op === Opcode.Bgeu) {
                     // pc
-                    when(gpRegs(rs1).out >= gpRegs(rs2).out) {
+                    when(readGpReg(rs1) >= readGpReg(rs2)) {
                         pc.io.in := (pc.io.out.asSInt + imm.asSInt).asUInt
                     }.otherwise {
                         pc.io.in := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
@@ -476,38 +453,35 @@ class Cpu extends Module {
                     memDataAddrReg  := 0.U
                     memDataInReg    := 0.U
                     when(op === Opcode.Lb) {
-                        gpRegs(rd).in    := signExtend(io.memDataOut, BYTE_LEN, WORD_LEN)
-                        gpRegs(rd).write := true.B
-                        pc.io.in         := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                        pc.io.write      := true.B
-                        state            := sFetch
+                        writeGpReg(rd, signExtend(io.memDataOut, BYTE_LEN, WORD_LEN))
+                        pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
+                        pc.io.write := true.B
+                        state       := sFetch
                     }.elsewhen(op === Opcode.Lbu) {
-                        gpRegs(rd).in    := io.memDataOut
-                        gpRegs(rd).write := true.B
-                        pc.io.in         := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                        pc.io.write      := true.B
-                        state            := sFetch
+                        writeGpReg(rd, io.memDataOut)
+                        pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
+                        pc.io.write := true.B
+                        state       := sFetch
                     }.elsewhen(op === Opcode.Lw && lswState === lswSFirstByte) {
                         dataBuf         := io.memDataOut
-                        memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
+                        memDataAddrReg  := (readGpReg(rs1).asSInt + imm.asSInt + 1.S).asUInt
                         memDataWriteReg := false.B
                         memDataReq      := true.B
                         lswState        := lswSSecondByte
                     }.elsewhen(op === Opcode.Lw && lswState === lswSSecondByte) {
                         val result = Cat(io.memDataOut, dataBuf)
-                        gpRegs(rd).in    := result
-                        gpRegs(rd).write := true.B
-                        pc.io.in         := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
-                        pc.io.write      := true.B
-                        lswState         := lswSFetch
-                        state            := sFetch
+                        writeGpReg(rd, result)
+                        pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
+                        pc.io.write := true.B
+                        lswState    := lswSFetch
+                        state       := sFetch
                     }.elsewhen(op === Opcode.Sb) {
                         pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                         pc.io.write := true.B
                         state       := sFetch
                     }.elsewhen(op === Opcode.Sw && lswState === lswSFirstByte) {
-                        memDataAddrReg  := (gpRegs(rs1).out.asSInt + imm.asSInt + 1.S).asUInt
-                        memDataInReg    := gpRegs(rd).out(15, 8)
+                        memDataAddrReg  := (readGpReg(rs1).asSInt + imm.asSInt + 1.S).asUInt
+                        memDataInReg    := readGpReg(rd)(15, 8)
                         memDataWriteReg := true.B
                         memDataReq      := true.B
                         lswState        := lswSSecondByte
