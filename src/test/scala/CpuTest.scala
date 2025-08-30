@@ -152,23 +152,23 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
         val addi_r4_r0_m1 = (0x1 << 11) | ((4 & 0x7) << 8) | ((0 & 0x7) << 5) | (0x1f & 0x1f)
         // addi r5, r0, 1   ; r5 = 1 (base address)
         val addi_r5_r0_1 = (0x1 << 11) | ((5 & 0x7) << 8) | ((0 & 0x7) << 5) | (1 & 0x1f)
-        // sb r1, r5, 0        ; mem[0] = 0x0f
+        // sb r1, r5, 0        ; mem[1] = 0x0f  (addr = r5 + 0 = 1)
         val sb_r1_r5_0 = (0x16 << 11) | ((1 & 0x7) << 8) | ((5 & 0x7) << 5)
-        // sb r2, r5, 1        ; mem[1] = 0xf8
+        // sb r2, r5, 1        ; mem[2] = 0xf8  (addr = r5 + 1 = 2)
         val sb_r2_r5_1 = (0x16 << 11) | ((2 & 0x7) << 8) | ((5 & 0x7) << 5) | 1
-        // sb r3, r5, 2        ; mem[2] = 0x07
+        // sb r3, r5, 2        ; mem[3] = 0x07  (addr = r5 + 2 = 3)
         val sb_r3_r5_2 = (0x16 << 11) | ((3 & 0x7) << 8) | ((5 & 0x7) << 5) | 2
-        // sb r4, r5, 3        ; mem[3] = 0xff
+        // sb r4, r5, 3        ; mem[4] = 0xff  (addr = r5 + 3 = 4)
         val sb_r4_r5_3 = (0x16 << 11) | ((4 & 0x7) << 8) | ((5 & 0x7) << 5) | 3
-        // lb r6, r5, 0        ; r6 = 0x0f (sign-extended)
+        // lb r6, r5, 0        ; r6 = 0x0f (reads mem[1], sign-extended)
         val lb_r6_r5_0 = (0x13 << 11) | ((6 & 0x7) << 8) | ((5 & 0x7) << 5)
-        // lbu r7, r5, 1       ; r7 = 0xf8 (zero-extended)
+        // lbu r7, r5, 1       ; r7 = 0xf8 (reads mem[2], zero-extended)
         val lbu_r7_r5_1 = (0x14 << 11) | ((7 & 0x7) << 8) | ((5 & 0x7) << 5) | 1
-        // lw r0, r5, 2        ; r0 = 0xff07 (0xff << 8 | 0x07)
+        // lw r0, r5, 2        ; r0 = 0xff07 (reads mem[3]=0x07 then mem[4]=0xff -> 0xff<<8 | 0x07)
         val lw_r0_r5_2 = (0x15 << 11) | ((0 & 0x7) << 8) | ((5 & 0x7) << 5) | 2
-        // sw r1, r5, 4        ; mem[4] = 0x0f, mem[5] = 0x00
+        // sw r1, r5, 4        ; mem[5] = 0x0f (low), mem[6] = 0x00 (high) (addr base+4=5)
         val sw_r1_r5_4 = (0x17 << 11) | ((1 & 0x7) << 8) | ((5 & 0x7) << 5) | 4
-        // lw r2, r5, 4        ; r2 = 0x000f
+        // lw r2, r5, 4        ; r2 = 0x000f (reads mem[5]=0x0f then mem[6]=0x00)
         val lw_r2_r5_4 = (0x15 << 11) | ((2 & 0x7) << 8) | ((5 & 0x7) << 5) | 4
 
         val prog = Seq(
@@ -229,6 +229,34 @@ class CpuTest extends AnyFlatSpec with ChiselScalatestTester {
             // lw r2, r5, 4
             c.clock.step(5)
             gpRegs(2).expect(15.U) // 0x00 << 8 | 0x0f
+        }
+    }
+
+    it should "additional load store instructions" in {
+        // addi r1, r0, -1
+        val addi_r1_r0_m1 = (0x1 << 11) | ((1 & 0x7) << 8) | ((0 & 0x7) << 5) | (31 & 0x1f)
+        // sw r1, r0, 0
+        val sw_r1_r0_0 = (0x17 << 11) | ((1 & 0x7) << 8) | ((0 & 0x7) << 5) | (0 & 0xff)
+        // lw r2, r0, 0
+        val lw_r2_r0_0 = (0x15 << 11) | ((2 & 0x7) << 8) | ((0 & 0x7) << 5) | (0 & 0xff)
+
+        val prog = Seq(
+            addi_r1_r0_m1,
+            sw_r1_r0_0,
+            lw_r2_r0_0
+        ).flatMap(i => Seq(i & 0xff, (i >> 8) & 0xff))
+
+        test(new TestHarness(Some(prog))) { c =>
+            val gpRegs = c.io.gpRegs
+
+            // addi r1, r0, -1
+            c.clock.step(3)
+            gpRegs(1).expect(0xffff.U)
+            // sw r1, r0, 0
+            c.clock.step(6)
+            // lw r2, r0, 0
+            c.clock.step(6)
+            gpRegs(2).expect(0xffff.U)
         }
     }
 

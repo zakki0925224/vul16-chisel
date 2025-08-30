@@ -155,8 +155,8 @@ class Cpu extends Module {
     val sFetch :: sDecode :: sExec :: sExec2 :: Nil = Enum(4)
     val state                                       = RegInit(sFetch)
 
-    val lswSFetch :: lswSFirstByte :: lswSSecondByte :: Nil = Enum(3)
-    val lswState                                            = RegInit(lswSFetch)
+    val lswSFetch :: lswSFirstByte :: lswSGap :: lswSSecondByte :: Nil = Enum(4)
+    val lswState                                                       = RegInit(lswSFetch)
 
     val op  = RegInit(Opcode.Add)
     val rd  = RegInit(0.U(3.W))
@@ -361,7 +361,7 @@ class Cpu extends Module {
                     memDataReq      := true.B
                 }.elsewhen(op === Opcode.Sw) {
                     memDataAddrReg  := (readGpReg(rs1).asSInt + imm.asSInt).asUInt
-                    memDataInReg    := readGpReg(rd)(7, 0)
+                    memDataInReg    := readGpReg(rd)(7, 0) // 下位バイト
                     memDataWriteReg := true.B
                     memDataReq      := true.B
                     lswState        := lswSFirstByte
@@ -448,10 +448,7 @@ class Cpu extends Module {
             }
             is(sExec2) {
                 when(io.memDataDone) {
-                    memDataReq      := false.B
-                    memDataWriteReg := false.B
-                    memDataAddrReg  := 0.U
-                    memDataInReg    := 0.U
+                    memDataReq := false.B
                     when(op === Opcode.Lb) {
                         writeGpReg(rd, signExtend(io.memDataOut, BYTE_LEN, WORD_LEN))
                         pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
@@ -463,11 +460,9 @@ class Cpu extends Module {
                         pc.io.write := true.B
                         state       := sFetch
                     }.elsewhen(op === Opcode.Lw && lswState === lswSFirstByte) {
-                        dataBuf         := io.memDataOut
-                        memDataAddrReg  := (readGpReg(rs1).asSInt + imm.asSInt + 1.S).asUInt
-                        memDataWriteReg := false.B
-                        memDataReq      := true.B
-                        lswState        := lswSSecondByte
+                        dataBuf        := io.memDataOut
+                        memDataAddrReg := (readGpReg(rs1).asSInt + imm.asSInt + 1.S).asUInt
+                        lswState       := lswSGap
                     }.elsewhen(op === Opcode.Lw && lswState === lswSSecondByte) {
                         val result = Cat(io.memDataOut, dataBuf)
                         writeGpReg(rd, result)
@@ -480,17 +475,25 @@ class Cpu extends Module {
                         pc.io.write := true.B
                         state       := sFetch
                     }.elsewhen(op === Opcode.Sw && lswState === lswSFirstByte) {
-                        memDataAddrReg  := (readGpReg(rs1).asSInt + imm.asSInt + 1.S).asUInt
-                        memDataInReg    := readGpReg(rd)(15, 8)
-                        memDataWriteReg := true.B
-                        memDataReq      := true.B
-                        lswState        := lswSSecondByte
+                        memDataAddrReg := (readGpReg(rs1).asSInt + imm.asSInt + 1.S).asUInt
+                        memDataInReg   := readGpReg(rd)(15, 8)
+                        lswState       := lswSGap
                     }.elsewhen(op === Opcode.Sw && lswState === lswSSecondByte) {
                         pc.io.in    := pc.io.out + (WORD_LEN.U / BYTE_LEN.U)
                         pc.io.write := true.B
                         lswState    := lswSFetch
                         state       := sFetch
                     }
+                }
+
+                when(op === Opcode.Lw && lswState === lswSGap) {
+                    memDataWriteReg := false.B
+                    memDataReq      := true.B
+                    lswState        := lswSSecondByte
+                }.elsewhen(op === Opcode.Sw && lswState === lswSGap) {
+                    memDataWriteReg := true.B
+                    memDataReq      := true.B
+                    lswState        := lswSSecondByte
                 }
             }
         }
